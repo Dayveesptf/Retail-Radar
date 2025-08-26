@@ -41,7 +41,7 @@ Unlike traditional market research tools, this solution combines live geographic
    cd backend
    npm install
 
-3. create a .env file still in the backend directory and add your Gemini API key (replacing "key") like this -> GEMINI_API_KEY="key" and PORT=5000
+3. create a .env file based on .env.example and add your Gemini API key
    
 4. Install frontend dependencies:  
    ```bash
