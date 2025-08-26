@@ -61,7 +61,12 @@ Unlike traditional market research tools, this solution combines live geographic
 
 ## Additional notes
 - **Known Issues**:
-    1. AI response may take a few seconds depending on the number of clusters.
+    1. Google Maps Billing Restriction: Initially, the project used Google Maps for visualization. However, due to Google Maps requiring a billing account for API usage, this caused limitations during development and testing.  
+
+    Current Solution: To work around the billing restriction, the project uses Leaflet with free OpenStreetMap tiles for map rendering. This allows the app to remain fully functional without incurring costs.
+
+    2. AI response may take a few seconds depending on the number of clusters.
+
 - **Future Improvements**:
     1. Add user authentication for personalized analysis.
     2. Support multiple cities and compare retail density across them.
