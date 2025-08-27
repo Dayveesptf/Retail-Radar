@@ -33,7 +33,7 @@ Unlike traditional market research tools, this solution combines live geographic
 ## Setup Instructions
 1. Clone the repository:  
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/XLabs-HackathonQ32025/Team-Davies.git
    cd <repo-folder>
 
 2. Install backend dependencies:  
