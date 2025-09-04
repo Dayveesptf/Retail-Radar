@@ -74,11 +74,20 @@ export default function StoreDensityMap() {
           `https://retail-radar.onrender.com/api/geocode?q=${encodeURIComponent(address)}&countrycodes=ng`
         );
 
-        const resp = await fetch(`https://retail-radar.onrender.com/api/analyze`, {
+        const _resp = await fetch(`https://retail-radar.onrender.com/api/analyze`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ... }),
-        });
+          body: JSON.stringify({
+          location: { address, center, radiusMeters: radius },
+          clusters: clustersSummary.map((c) => ({
+            id: c.id,
+            centroid: c.centroid,
+            storeCount: c.storeCount,
+            types: c.types,
+            sizes: c.sizes,
+          })),
+        }),
+      });
 
         if (nomRes.ok) {
           const nomJson = await nomRes.json();
