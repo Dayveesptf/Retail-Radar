@@ -6,15 +6,17 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.heat";
 import clustering from "density-clustering";
-import "./index.css"
+import "./index.css";
 
 // Fix default marker icon paths (CDN)
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
 function haversine(p1, p2) {
@@ -46,7 +48,7 @@ export default function StoreDensityMap() {
 
   useEffect(() => {
     mapRef.current = L.map("map", {
-      center: [6.5244, 3.3792], 
+      center: [6.5244, 3.3792],
       zoom: 12,
       tap: false,
       preferCanvas: true,
@@ -67,32 +69,18 @@ export default function StoreDensityMap() {
     setAiInsight(null);
     setClustersMeta([]);
 
+    // ---------------- Geocoding ----------------
     async function geocodeAddress(address) {
-      // Try Nominatim first (restricted to Nigeria)
       try {
         const nomRes = await fetch(
-          `https://retail-radar.onrender.com/api/geocode?q=${encodeURIComponent(address)}&countrycodes=ng`
+          `https://retail-radar.onrender.com/api/geocode?q=${encodeURIComponent(
+            address
+          )}&countrycodes=ng`
         );
-
-        const _resp = await fetch(`https://retail-radar.onrender.com/api/analyze`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-          location: { address, center, radiusMeters: radius },
-          clusters: clustersSummary.map((c) => ({
-            id: c.id,
-            centroid: c.centroid,
-            storeCount: c.storeCount,
-            types: c.types,
-            sizes: c.sizes,
-          })),
-        }),
-      });
 
         if (nomRes.ok) {
           const nomJson = await nomRes.json();
           if (nomJson && nomJson.length > 0) {
-            // Prefer Lagos if found
             const match =
               nomJson.find((r) => r.display_name.includes("Lagos")) ||
               nomJson.find((r) => r.display_name.includes("Nigeria")) ||
@@ -104,10 +92,12 @@ export default function StoreDensityMap() {
         console.warn("Nominatim failed:", e);
       }
 
-      // Fallback: Photon
+      // fallback: Photon
       try {
         const photonRes = await fetch(
-          `https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=5`
+          `https://photon.komoot.io/api/?q=${encodeURIComponent(
+            address
+          )}&limit=5`
         );
         if (photonRes.ok) {
           const photonJson = await photonRes.json();
@@ -127,7 +117,7 @@ export default function StoreDensityMap() {
     }
 
     const geo = await geocodeAddress(address);
-    
+
     if (!geo) {
       setStatus("Location not found.");
       return;
@@ -135,9 +125,9 @@ export default function StoreDensityMap() {
     const center = [parseFloat(geo.lat), parseFloat(geo.lon)];
     mapRef.current.setView(center, 13);
 
+    // ---------------- Overpass query ----------------
     setStatus("Fetching stores from Overpass...");
-
-    const radius = 5000; // meters
+    const radius = 5000;
     const overpassQL = `
       [out:json][timeout:25];
       (
@@ -146,12 +136,14 @@ export default function StoreDensityMap() {
       );
       out center tags;
     `;
-    const overpassUrl = "https://overpass-api.de/api/interpreter";
-    const overpassRes = await fetch(overpassUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `data=${encodeURIComponent(overpassQL)}`,
-    });
+    const overpassRes = await fetch(
+      "https://overpass-api.de/api/interpreter",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(overpassQL)}`,
+      }
+    );
     const overpassJson = await overpassRes.json();
     const elements = overpassJson.elements || [];
     if (elements.length === 0) {
@@ -161,9 +153,12 @@ export default function StoreDensityMap() {
 
     setStatus(`Found ${elements.length} places. Clustering...`);
 
+    // ---------------- Store processing ----------------
     const fetchedStores = elements.map((el) => {
-      const name = (el.tags && (el.tags.name || el.tags["brand"])) || "Unnamed";
-      const type = el.tags && (el.tags.shop || el.tags.amenity || "shop");
+      const name =
+        (el.tags && (el.tags.name || el.tags["brand"])) || "Unnamed";
+      const type =
+        (el.tags && (el.tags.shop || el.tags.amenity)) || "shop";
       let size = "small";
       const bigKeywords = ["supermarket", "department_store", "mall"];
       const medKeywords = ["grocery", "chemist", "bakery", "convenience"];
@@ -183,33 +178,38 @@ export default function StoreDensityMap() {
       };
     });
 
-    // 3) Run DBSCAN with Haversine (eps in meters). density-clustering expects an optional distance function
+    // ---------------- Clustering ----------------
     const points = fetchedStores.map((s) => [s.lat, s.lng]);
     const dbscan = new clustering.DBSCAN();
-    // We'll pass epsilon = 500 meters and minPts = 3 (adjustable)
     const eps = 500;
     const minPts = 3;
     const clusters = dbscan.run(points, eps, minPts, haversine);
-
     const noise = dbscan.noise || [];
 
-    setStatus(`Found ${clusters.length} clusters (and ${noise.length} noise points). Rendering...`);
+    setStatus(
+      `Found ${clusters.length} clusters (and ${noise.length} noise points). Rendering...`
+    );
 
+    // clear old layers
     mapRef.current.eachLayer((layer) => {
       if (!layer._url) mapRef.current.removeLayer(layer);
     });
 
+    // heatmap
     const heatData = fetchedStores.map((s) => [
       s.lat,
       s.lng,
       sizeWeight[s.size] || 0.5,
     ]);
-    L.heatLayer(heatData, { radius: 25, blur: 15, maxZoom: 17 }).addTo(mapRef.current);
+    L.heatLayer(heatData, { radius: 25, blur: 15, maxZoom: 17 }).addTo(
+      mapRef.current
+    );
 
-    // Marker cluster group for individual stores
-    const markerCluster = L.markerClusterGroup({ chunkedLoading: true, showCoverageOnHover: true });
-
-    // Add store markers (all)
+    // cluster markers
+    const markerCluster = L.markerClusterGroup({
+      chunkedLoading: true,
+      showCoverageOnHover: true,
+    });
     fetchedStores.forEach((s) => {
       const m = L.marker([s.lat, s.lng]).bindPopup(
         `<div class="p-2 bg-gray-200 rounded-md">
@@ -222,20 +222,23 @@ export default function StoreDensityMap() {
     });
     mapRef.current.addLayer(markerCluster);
 
-    // Process clusters: compute centroid, radius (max dist), density (stores/km²), type breakdown
+    // ---------------- Summarize clusters ----------------
     const clustersSummary = clusters.map((clusterIndexes, idx) => {
       const clusterStores = clusterIndexes.map((i) => fetchedStores[i]);
       const latSum = clusterStores.reduce((s, it) => s + it.lat, 0);
       const lngSum = clusterStores.reduce((s, it) => s + it.lng, 0);
-      const centroid = [latSum / clusterStores.length, lngSum / clusterStores.length];
+      const centroid = [
+        latSum / clusterStores.length,
+        lngSum / clusterStores.length,
+      ];
       const maxDist = Math.max(
         ...clusterStores.map((cs) => haversine(centroid, [cs.lat, cs.lng]))
       );
-      const radiusMeters = Math.max(maxDist, 100); // at least 100m
+      const radiusMeters = Math.max(maxDist, 100);
       const areaKm2 = Math.PI * (radiusMeters / 1000) ** 2;
-      const densityPerKm2 = clusterStores.length / Math.max(areaKm2, 0.0001);
+      const densityPerKm2 =
+        clusterStores.length / Math.max(areaKm2, 0.0001);
 
-      // breakdown
       const types = {};
       const sizes = {};
       clusterStores.forEach((s) => {
@@ -249,14 +252,14 @@ export default function StoreDensityMap() {
         radiusMeters,
         storeCount: clusterStores.length,
         densityPerKm2,
-        densityScore: Math.round(Math.min(100, densityPerKm2 * 10)), 
+        densityScore: Math.round(Math.min(100, densityPerKm2 * 10)),
         types,
         sizes,
         stores: clusterStores,
       };
     });
 
-    // draw cluster centroids and circles
+    // draw clusters
     clustersSummary.forEach((c) => {
       const circle = L.circle(c.centroid, {
         radius: c.radiusMeters,
@@ -273,38 +276,48 @@ export default function StoreDensityMap() {
         iconAnchor: [18, 18],
       });
       L.marker(c.centroid, { icon })
-        .bindPopup(`<strong>Cluster ${c.id + 1}</strong><br/>Stores: ${c.storeCount}<br/>Density score: ${c.densityScore}`)
+        .bindPopup(
+          `<strong>Cluster ${c.id + 1}</strong><br/>Stores: ${
+            c.storeCount
+          }<br/>Density score: ${c.densityScore}`
+        )
         .addTo(mapRef.current)
         .on("click", () => {
           setClustersMeta([c]);
         });
 
-      circle.on("mouseover", () => circle.setStyle({ fillOpacity: 0.25 }));
-      circle.on("mouseout", () => circle.setStyle({ fillOpacity: 0.12 }));
+      circle.on("mouseover", () =>
+        circle.setStyle({ fillOpacity: 0.25 })
+      );
+      circle.on("mouseout", () =>
+        circle.setStyle({ fillOpacity: 0.12 })
+      );
     });
 
-    // fit map bounds to data
     const allCoords = fetchedStores.map((s) => [s.lat, s.lng]);
     const bounds = L.latLngBounds(allCoords);
     mapRef.current.fitBounds(bounds.pad(0.2));
 
-    // 4) send summary to backend AI endpoint
+    // ---------------- AI Analysis ----------------
     try {
       setStatus("Requesting AI analysis...");
-      const resp = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          location: { address, center, radiusMeters: radius },
-          clusters: clustersSummary.map((c) => ({
-            id: c.id,
-            centroid: c.centroid,
-            storeCount: c.storeCount,
-            types: c.types,
-            sizes: c.sizes,
-          })),
-        }),
-      });
+      const resp = await fetch(
+        "https://retail-radar.onrender.com/api/analyze",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: { address, center, radiusMeters: radius },
+            clusters: clustersSummary.map((c) => ({
+              id: c.id,
+              centroid: c.centroid,
+              storeCount: c.storeCount,
+              types: c.types,
+              sizes: c.sizes,
+            })),
+          }),
+        }
+      );
       if (resp.ok) {
         const body = await resp.json();
         setAiInsight(body.insight);
@@ -315,9 +328,9 @@ export default function StoreDensityMap() {
     } catch (err) {
       console.error(err);
       setStatus("AI request error");
-}
-console.log("Sending clusters to AI:", clustersSummary);
+    }
 
+    console.log("Sending clusters to AI:", clustersSummary);
   }
 
   const formatAiInsight = (raw) => {
