@@ -3,13 +3,14 @@ import express from "express";
 import fetch from "node-fetch"; // or global fetch if Node 18+
 import dotenv from "dotenv";
 import cors from "cors";
+import populationData from "./data/population.json" assert { type: "json" };
 
 dotenv.config();
 
 const app = express();
 app.use(
   cors({
-    origin: "https://retail-radar-dd.vercel.app"
+    origin: "https://retail-radar-dd.vercel.app",
   })
 );
 app.use(express.json({ limit: "1mb" }));
@@ -37,14 +38,33 @@ app.post("/api/analyze", async (req, res) => {
       sizes: c.sizes,
     }));
 
+    let popInfo = "";
+    if (location.address) {
+      const addr = location.address.toLowerCase();
+      // Try to detect state name from populationData
+      const matchedState = Object.keys(populationData).find((state) =>
+        addr.includes(state.toLowerCase())
+      );
+      if (matchedState) {
+        popInfo = `Population data for ${matchedState}: ${JSON.stringify(
+          populationData[matchedState]
+        )}`;
+      }
+    }
+
     const prompt = `You are a retail analyst AI.
 Analyze the following clusters for ${location.address}:
 ${JSON.stringify(minimalClusters, null, 2)}
+
+Population context:
+${popInfo || "No population data available"}
+
 Focus only on:
 - Overall store density
 - Cluster highlights
 - Store type and size breakdown
 - Suggestions for market opportunities
+- Demand growth projections (based on population age/size vs. store density)
 `;
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
@@ -85,12 +105,12 @@ Focus only on:
     res.json({ insight });
   } catch (err) {
     console.error("AI analyze error:", err);
-    res.status(500).json({ error: "AI request failed", details: err.message });
+    res
+      .status(500)
+      .json({ error: "AI request failed", details: err.message });
   }
 });
 
-
-// --- Geocode endpoint (GET) ---
 app.get("/api/geocode", async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ error: "Query missing" });
@@ -106,11 +126,20 @@ app.get("/api/geocode", async (req, res) => {
     res.json(data);
   } catch (err) {
     console.error("Geocode error:", err);
-    res.status(500).json({ error: "Failed to fetch geocode", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Failed to fetch geocode", details: err.message });
   }
 });
 
-// --- Start server ---
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// Example helper: get LGA population
+function getPopulation(state, lga) {
+  if (populationData[state] && populationData[state][lga]) {
+    return populationData[state][lga];
+  }
+  return null;
+}
