@@ -67,20 +67,59 @@ export default function StoreDensityMap() {
     setAiInsight(null);
     setClustersMeta([]);
 
-const nomRes = await fetch(`/api/geocode?q=${encodeURIComponent(address)}`);
-if (!nomRes.ok) {
-  setStatus("Geocoding failed.");
-  return;
-}
-const nomJson = await nomRes.json();
-if (!nomJson || nomJson.length === 0) {
-  setStatus("Location not found.");
-  return;
-}
-const { lat, lon } = nomJson[0];
-const center = [parseFloat(lat), parseFloat(lon)];
-mapRef.current.setView(center, 13);
-setStatus("Fetching stores from Overpass...");
+    async function geocodeAddress(address) {
+      // Try Nominatim first (restricted to Nigeria)
+      try {
+        const nomRes = await fetch(
+          `/api/geocode?q=${encodeURIComponent(address)}&countrycodes=ng`
+        );
+        if (nomRes.ok) {
+          const nomJson = await nomRes.json();
+          if (nomJson && nomJson.length > 0) {
+            // Prefer Lagos if found
+            const match =
+              nomJson.find((r) => r.display_name.includes("Lagos")) ||
+              nomJson.find((r) => r.display_name.includes("Nigeria")) ||
+              nomJson[0];
+            return { lat: match.lat, lon: match.lon };
+          }
+        }
+      } catch (e) {
+        console.warn("Nominatim failed:", e);
+      }
+
+      // Fallback: Photon
+      try {
+        const photonRes = await fetch(
+          `https://photon.komoot.io/api/?q=${encodeURIComponent(address)}&limit=5`
+        );
+        if (photonRes.ok) {
+          const photonJson = await photonRes.json();
+          if (photonJson && photonJson.features.length > 0) {
+            const first = photonJson.features[0];
+            return {
+              lat: first.geometry.coordinates[1],
+              lon: first.geometry.coordinates[0],
+            };
+          }
+        }
+      } catch (e) {
+        console.warn("Photon failed:", e);
+      }
+
+      return null;
+    }
+
+    const geo = await geocodeAddress(address);
+    
+    if (!geo) {
+      setStatus("Location not found.");
+      return;
+    }
+    const center = [parseFloat(geo.lat), parseFloat(geo.lon)];
+    mapRef.current.setView(center, 13);
+
+    setStatus("Fetching stores from Overpass...");
 
     const radius = 5000; // meters
     const overpassQL = `
@@ -103,6 +142,7 @@ setStatus("Fetching stores from Overpass...");
       setStatus("No stores found in that area.");
       return;
     }
+
     setStatus(`Found ${elements.length} places. Clustering...`);
 
     const fetchedStores = elements.map((el) => {
@@ -156,8 +196,8 @@ setStatus("Fetching stores from Overpass...");
     // Add store markers (all)
     fetchedStores.forEach((s) => {
       const m = L.marker([s.lat, s.lng]).bindPopup(
-        `<div class="p-2 bg-gray-800">
-           <strong>${s.name}</strong><br/>
+        `<div class="p-2 bg-gray-200 rounded-md">
+           <strong class="text-[#414296]">${s.name}</strong><br/>
            ${s.type || ""} • ${s.size}<br/>
            <small>id:${s.id}</small>
          </div>`
