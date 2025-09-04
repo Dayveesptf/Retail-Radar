@@ -71,8 +71,15 @@ export default function StoreDensityMap() {
       // Try Nominatim first (restricted to Nigeria)
       try {
         const nomRes = await fetch(
-          `/api/geocode?q=${encodeURIComponent(address)}&countrycodes=ng`
+          `https://retail-radar.onrender.com/api/geocode?q=${encodeURIComponent(address)}&countrycodes=ng`
         );
+
+        const resp = await fetch(`https://retail-radar.onrender.com/api/analyze`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ... }),
+        });
+
         if (nomRes.ok) {
           const nomJson = await nomRes.json();
           if (nomJson && nomJson.length > 0) {
