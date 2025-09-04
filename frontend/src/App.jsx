@@ -340,20 +340,23 @@ export default function StoreDensityMap() {
   let html = "";
 
   sections.forEach((s) => {
-    // Detect if it's a heading or regular paragraph
-    if (s.toLowerCase().includes("overall store density") ||
-        s.toLowerCase().includes("cluster highlights") ||
-        s.toLowerCase().includes("store type and size breakdown") ||
-        s.toLowerCase().includes("suggestions") ||
-        s.toLowerCase().includes("conclusion")) {
-      html += `<h3 class="text-base font-bold mb mt-8">${s.trim()}</h3>`;
-    } else {
-      const lines = s.split("\n\n").filter(Boolean);
-      lines.forEach((line) => {
-        html += `<p class="text-sm text-gray-700 mt-1">${line.replace(/^\*\s*/, "").trim()}</p>`;
-      });
-    }
-  });
+  // Detect if it's a heading or regular paragraph
+  if (
+    s.toLowerCase().includes("overall store density") ||
+    s.toLowerCase().includes("cluster highlights") ||
+    s.toLowerCase().includes("store type and size breakdown") ||
+    s.toLowerCase().includes("suggestions") ||
+    s.toLowerCase().includes("demand growth projections") || // <-- new section
+    s.toLowerCase().includes("conclusion")
+  ) {
+    html += `<h3 class="text-base font-bold mb mt-8">${s.trim()}</h3>`;
+  } else {
+    const lines = s.split("\n\n").filter(Boolean);
+    lines.forEach((line) => {
+      html += `<p class="text-sm text-gray-700 mt-1">${line.replace(/^\*\s*/, "").trim()}</p>`;
+    });
+  }
+});
 
   return html;
 };

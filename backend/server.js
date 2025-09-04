@@ -52,20 +52,25 @@ app.post("/api/analyze", async (req, res) => {
       }
     }
 
-    const prompt = `You are a retail analyst AI.
-Analyze the following clusters for ${location.address}:
-${JSON.stringify(minimalClusters, null, 2)}
+   const prompt = `You are a retail analyst AI.
+    Analyze the following clusters for ${location.address}:
+    ${JSON.stringify(minimalClusters, null, 2)}
 
-Population context:
-${popInfo || "No population data available"}
+    Population context:
+    ${popInfo || "No population data available"}
 
-Focus only on:
-- Overall store density
-- Cluster highlights
-- Store type and size breakdown
-- Suggestions for market opportunities
-- Demand growth projections (based on population age/size vs. store density)
-`;
+    Focus only on:
+    - Overall store density
+    - Cluster highlights
+    - Store type and size breakdown
+    - Suggestions for market opportunities
+    - Demand growth projections (based on population in that LGA)
+
+    Important:
+    - Do NOT say "more demographic data is needed" or "insufficient data".
+    - Use ONLY the clusters and population info provided above.
+    - Give clear, actionable insights even if the data is limited.
+    `;
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
