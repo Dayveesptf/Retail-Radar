@@ -71,7 +71,6 @@ app.post("/api/analyze", async (req, res) => {
     - Cluster highlights
     - Store type and size breakdown
     - Suggestions for market opportunities
-    - Demand growth projections (based on population in that LGA)
 
     Important:
     - Do NOT say "more demographic data is needed" or "insufficient data".
