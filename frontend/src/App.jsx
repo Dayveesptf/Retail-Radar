@@ -362,63 +362,63 @@ export default function StoreDensityMap() {
 };
 
   return (
-    <div className="flex h-screen">
+    <div className="analytics-container flex h-screen">
     <div className="flex flex-col w-3/5">
-      <div className="flex justify-center analytics-panel p-6 mx-4 my-4 rounded-xl items-center">
+      <div className="flex justify-center analytics-panel p-6 mx-4 my-4 rounded-xl items-center fade-in">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Enter location (e.g., Yaba, Lagos)"
-          className="w-72 mr-4 px-3 py-2 rounded-lg border-2 border-gray-200"
+          className="analytics-input w-72 mr-4"
         />
         <button
           onClick={() => analyzeLocation(query || "Lagos, Nigeria")}
-          className="bg-blue-400 py-2 px-3 rounded-md text-base hover:bg-blue-500"
+          className="analytics-button"
         >
           Analyze
         </button>
-        <div className="ml-4">{status}</div>
+        <div className="analytics-status ml-4">{status}</div>
       </div>
 
       {/* Map container */}
       <div className="flex-1 w-full p-4">
-        <div id="map" className="map-container h-full w-full" />
+        <div id="map" className="map-container h-full w-full slide-up" />
       </div>
     </div>
 
     {/* Right column: AI Insight + Cluster Summaries */}
     <div className="w-2/5 p-6 bg-gradient-to-b from-surface-muted to-surface overflow-y-auto">
-      <h2 className="text-2xl font-bold text-[#484883] mb-6 text-gradient">AI Insight</h2>
+      <h2 className="heading-xl mb-6 text-gradient fade-in">AI Insight</h2>
       {aiInsight ? (
-        <div className="fade-in">
+        <div className="insight-panel fade-in">
           <div className="text-body" dangerouslySetInnerHTML={{ __html: formatAiInsight(aiInsight) }} />
         </div>
       ) : (
-        <div className="">
-          <p className="">No AI analysis yet. Click Analyze to get started.</p>
+        <div className="insight-card fade-in">
+          <p className="text-caption">No AI analysis yet. Click Analyze to get started.</p>
         </div>
       )}
 
       <div className="border-t border-border my-8"></div>
-      <h3 className="text-lg mb-4 font-bold">Cluster Summaries</h3>
+      <h3 className="heading-lg mb-4 fade-in">Cluster Summaries</h3>
       {clustersMeta.length === 0 && (
-        <div className="">
-          <p className="">Click a cluster marker to view details here.</p>
+        <div className="insight-card fade-in">
+          <p className="text-caption">Click a cluster marker to view details here.</p>
         </div>
       )}
       {clustersMeta.map((c) => (
-        <div key={c.id} className="my-4 slide-up">
-          <div className="text-[#30327b] text-lg">Cluster {c.id + 1}:</div>
-          <div className="mb-1 text-md">- {c.storeCount} Stores</div>
-          <div className="text-body mb-3 text-md">- Density score: <span className="data-metric">{c.densityScore}/100</span></div>
-          <div className="mb-4">
-            <div className="" style={{width: `${c.densityScore}%`}}></div>
+        <div key={c.id} className="cluster-card my-4 slide-up">
+          <div className="data-label mb-2">Cluster {c.id + 1}:</div>
+          <div className="data-metric mb-1">- {c.storeCount} Stores</div>
+          <div className="text-body mb-3">- Density score: <span className="data-metric text-accent-blue">{c.densityScore}/100</span></div>
+          <div className="progress-bar mb-4">
+            <div className="progress-fill" style={{width: `${c.densityScore}%`}}></div>
           </div>
           <div className="text-body">
-            <div className="mb-2 text-md">- Store Types</div>
+            <div className="data-label mb-2">- Store Types</div>
             <div className="flex flex-wrap gap-2">
               {Object.entries(c.types).map(([k, v]) => (
-                <span key={k} className="inline-flex items-center px-4 py-1 rounded-full text-xs font-medium bg-blue-200 text-accent-blue border border-blue-500">
+                <span key={k} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent-blue/10 text-accent-blue border border-accent-blue/20 hover:bg-accent-blue/20 transition-all duration-200">
                   {k}: {v}
                 </span>
               ))}
@@ -428,5 +428,6 @@ export default function StoreDensityMap() {
       ))}
     </div>
   </div>
+
   );
 }

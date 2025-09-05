@@ -1,4 +1,4 @@
-# Urban Retail Visualizer
+# Retail Radar
 
 ## Team Information
 **Team Name:** Team Davies  

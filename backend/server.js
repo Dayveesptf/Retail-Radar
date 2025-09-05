@@ -3,9 +3,16 @@ import express from "express";
 import fetch from "node-fetch"; // or global fetch if Node 18+
 import dotenv from "dotenv";
 import cors from "cors";
-import populationData from "./data/population.json" assert { type: "json" };
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
+
+// --- Load population.json manually ---
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const populationData = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "data/population.json"), "utf-8")
+);
 
 const app = express();
 app.use(
@@ -38,10 +45,10 @@ app.post("/api/analyze", async (req, res) => {
       sizes: c.sizes,
     }));
 
+    // Match state in population data
     let popInfo = "";
     if (location.address) {
       const addr = location.address.toLowerCase();
-      // Try to detect state name from populationData
       const matchedState = Object.keys(populationData).find((state) =>
         addr.includes(state.toLowerCase())
       );
@@ -52,7 +59,7 @@ app.post("/api/analyze", async (req, res) => {
       }
     }
 
-   const prompt = `You are a retail analyst AI.
+    const prompt = `You are a retail analyst AI.
     Analyze the following clusters for ${location.address}:
     ${JSON.stringify(minimalClusters, null, 2)}
 
@@ -116,6 +123,7 @@ app.post("/api/analyze", async (req, res) => {
   }
 });
 
+// --- Geocode endpoint ---
 app.get("/api/geocode", async (req, res) => {
   const { q } = req.query;
   if (!q) return res.status(400).json({ error: "Query missing" });
@@ -148,3 +156,4 @@ function getPopulation(state, lga) {
   }
   return null;
 }
+
