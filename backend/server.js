@@ -5,19 +5,20 @@ import dotenv from "dotenv";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
 // --- Load population.json manually ---
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
-const populationData = JSON.parse(
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);const populationData = JSON.parse(
   fs.readFileSync(path.join(__dirname, "data/population.json"), "utf-8")
 );
 
 const app = express();
 app.use(
   cors({
-    origin: "https://retail-radar-dd.vercel.app",
+    origin: ["https://retail-radar-dd.vercel.app", "http://localhost:5173"],
   })
 );
 app.use(express.json({ limit: "1mb" }));
@@ -155,4 +156,3 @@ function getPopulation(state, lga) {
   }
   return null;
 }
-
