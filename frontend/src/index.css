@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 .leaflet-container {
-  height: 80%;
-  width: 80%;
+  height: 90%;
+  width: 90%;
   margin: 0 auto;
   touch-action: pan-x pan-y; /* ✅ enables drag on touch devices */
 }
@@ -166,11 +166,11 @@
   }
 
   .analytics-button {
-    @apply px-6 py-3 bg-gradient-to-r from-primary to-primary-hover
-           text-primary-foreground font-semibold rounded-lg
+    @apply px-4 py-3 md:px-6 md:py-3 bg-gradient-to-r from-primary to-primary-hover
+           text-primary-foreground font-semibold rounded-sm md:rounded-lg
            hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]
            focus:outline-none focus:ring-2 focus:ring-primary/50
-           transition-all duration-200;
+           transition-all duration-200 text-sm md:text-base;
     box-shadow: var(--shadow-data);
   }
 

@@ -362,14 +362,14 @@ export default function StoreDensityMap() {
 };
 
   return (
-    <div className="analytics-container flex h-screen">
-    <div className="flex flex-col w-3/5">
-      <div className="flex justify-center analytics-panel p-6 mx-4 my-4 rounded-xl items-center fade-in">
+    <div className="analytics-container flex flex-col md:flex-row h-screen">
+    <div className="flex flex-col w-full md:w-3/5">
+      <div className="flex justify-around md:justify-center analytics-panel p-3 md:p-6 mx-4 my-4 rounded items-center fade-in">
         <input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Enter location (e.g., Yaba, Lagos)"
-          className="analytics-input w-72 mr-4"
+          className="analytics-input w-60 md:w-72 mr-4"
         />
         <button
           onClick={() => analyzeLocation(query || "Lagos, Nigeria")}
@@ -377,17 +377,17 @@ export default function StoreDensityMap() {
         >
           Analyze
         </button>
-        <div className="analytics-status ml-4">{status}</div>
+        <div className="analytics-status ml-4 md:flex hidden">{status}</div>
       </div>
 
       {/* Map container */}
-      <div className="flex-1 w-full p-4">
+      <div className="flex w-full p-4 min-h-[400px]">
         <div id="map" className="map-container h-full w-full slide-up" />
       </div>
     </div>
 
     {/* Right column: AI Insight + Cluster Summaries */}
-    <div className="w-2/5 p-6 bg-gradient-to-b from-surface-muted to-surface overflow-y-auto">
+    <div className="md:w-2/5 w-full p-6 bg-gradient-to-b from-surface-muted to-surface overflow-y-auto">
       <h2 className="heading-xl mb-6 text-gradient fade-in">AI Insight</h2>
       {aiInsight ? (
         <div className="insight-panel fade-in">
