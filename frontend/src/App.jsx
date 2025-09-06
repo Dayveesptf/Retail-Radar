@@ -362,7 +362,7 @@ export default function StoreDensityMap() {
 };
 
   return (
-    <div className="analytics-container flex flex-col md:flex-row h-screen">
+    <div className="analytics-container flex flex-col md:flex-row">
     <div className="flex flex-col w-full md:w-3/5">
       <div className="flex justify-around md:justify-center analytics-panel p-3 md:p-6 mx-4 my-4 rounded items-center fade-in">
         <input
@@ -381,7 +381,7 @@ export default function StoreDensityMap() {
       </div>
 
       {/* Map container */}
-      <div className="flex w-full p-4 min-h-[400px]">
+      <div className="flex w-full p-4 h-[400px] md:h-[650px]">
         <div id="map" className="map-container h-full w-full slide-up" />
       </div>
     </div>
