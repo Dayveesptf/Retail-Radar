@@ -8,6 +8,12 @@ import "leaflet.heat";
 import clustering from "density-clustering";
 import "./index.css";
 
+
+const API_BASE =
+  window.location.hostname === "localhost"
+    ? "http://localhost:5000"
+    : "https://retail-radar.onrender.com";
+
 // Fix default marker icon paths (CDN)
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -73,7 +79,7 @@ export default function StoreDensityMap() {
     async function geocodeAddress(address) {
       try {
         const nomRes = await fetch(
-          `https://retail-radar.onrender.com/api/geocode?q=${encodeURIComponent(
+          `${API_BASE}/api/geocode?q=${encodeURIComponent(
             address
           )}&countrycodes=ng`
         );
@@ -302,7 +308,7 @@ export default function StoreDensityMap() {
     try {
       setStatus("Requesting AI analysis...");
       const resp = await fetch(
-        "https://retail-radar.onrender.com/api/analyze",
+        `${API_BASE}/api/analyze`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
