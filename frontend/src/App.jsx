@@ -283,7 +283,7 @@ export default function StoreDensityMap() {
       });
       L.marker(c.centroid, { icon })
         .bindPopup(
-          `<strong>Cluster ${c.id + 1}</strong><br/>Stores: ${
+          `<strong>Cluster ${c.id}</strong><br/>Stores: ${
             c.storeCount
           }<br/>Density score: ${c.densityScore}`
         )
@@ -414,7 +414,7 @@ export default function StoreDensityMap() {
       )}
       {clustersMeta.map((c) => (
         <div key={c.id} className="cluster-card my-4 slide-up">
-          <div className="data-label mb-2">Cluster {c.id + 1}:</div>
+          <div className="data-label mb-2">Cluster {c.id}:</div>
           <div className="data-metric mb-1">- {c.storeCount} Stores</div>
           <div className="text-body mb-3">- Density score: <span className="data-metric text-accent-blue">{c.densityScore}/100</span></div>
           <div className="progress-bar mb-4">
