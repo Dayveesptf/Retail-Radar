@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+// @ts-ignore - No type definitions available
 import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+// @ts-ignore - No type definitions available
 import "leaflet.heat";
+// @ts-ignore - No type definitions available
 import clustering from "density-clustering";
-import "./index.css";
-
 
 const API_BASE =
   window.location.hostname === "localhost"
@@ -15,6 +16,7 @@ const API_BASE =
     : "https://retail-radar.onrender.com";
 
 // Fix default marker icon paths (CDN)
+// @ts-ignore - Extending Leaflet default icon
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -56,7 +58,6 @@ export default function StoreDensityMap() {
     mapRef.current = L.map("map", {
       center: [6.5244, 3.3792],
       zoom: 12,
-      tap: false,
       preferCanvas: true,
     });
 
@@ -207,21 +208,23 @@ export default function StoreDensityMap() {
       s.lng,
       sizeWeight[s.size] || 0.5,
     ]);
+    // @ts-ignore - Leaflet heat extension
     L.heatLayer(heatData, { radius: 25, blur: 15, maxZoom: 17 }).addTo(
       mapRef.current
     );
 
     // cluster markers
+    // @ts-ignore - Leaflet cluster extension
     const markerCluster = L.markerClusterGroup({
       chunkedLoading: true,
       showCoverageOnHover: true,
     });
     fetchedStores.forEach((s) => {
       const m = L.marker([s.lat, s.lng]).bindPopup(
-        `<div class="p-2 bg-gray-200 rounded-md">
-           <strong class="text-[#414296]">${s.name}</strong><br/>
-           ${s.type || ""} • ${s.size}<br/>
-           <small>id:${s.id}</small>
+        `<div class="p-3 bg-surface-elevated rounded-lg border border-border">
+           <strong class="text-primary text-base">${s.name}</strong><br/>
+           <span class="text-foreground text-sm">${s.type || ""} • ${s.size}</span><br/>
+           <small class="text-muted-foreground">id:${s.id}</small>
          </div>`
       );
       markerCluster.addLayer(m);
@@ -269,23 +272,25 @@ export default function StoreDensityMap() {
     clustersSummary.forEach((c) => {
       const circle = L.circle(c.centroid, {
         radius: c.radiusMeters,
-        color: "crimson",
-        fillColor: "#f03",
+        color: "hsl(217 91% 60%)",
+        fillColor: "hsl(217 91% 60%)",
         fillOpacity: 0.12,
         weight: 2,
       }).addTo(mapRef.current);
 
       const icon = L.divIcon({
         className: "cluster-centroid",
-        html: `<div style="background:rgba(220,20,60,0.9);color:white;border-radius:999px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:700">${c.storeCount}</div>`,
+        html: `<div style="background:hsl(217 91% 60%);color:white;border-radius:999px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:700;box-shadow:0 4px 12px hsl(217 91% 60% / 0.3)">${c.storeCount}</div>`,
         iconSize: [36, 36],
         iconAnchor: [18, 18],
       });
       L.marker(c.centroid, { icon })
         .bindPopup(
-          `<strong>Cluster ${c.id}</strong><br/>Stores: ${
-            c.storeCount
-          }<br/>Density score: ${c.densityScore}`
+          `<div class="p-3 bg-surface-elevated rounded-lg border border-border">
+             <strong class="text-primary text-base">Cluster ${c.id}</strong><br/>
+             <span class="text-foreground">Stores: ${c.storeCount}</span><br/>
+             <span class="text-accent-green">Density score: ${c.densityScore}</span>
+           </div>`
         )
         .addTo(mapRef.current)
         .on("click", () => {
@@ -327,7 +332,7 @@ export default function StoreDensityMap() {
       if (resp.ok) {
         const body = await resp.json();
         setAiInsight(body.insight);
-        setStatus("Done");
+        setStatus("Analysis complete");
       } else {
         setStatus("AI request failed");
       }
@@ -340,100 +345,171 @@ export default function StoreDensityMap() {
   }
 
   const formatAiInsight = (raw) => {
-  if (!raw) return "<p>No insight available.</p>";
+    if (!raw) return "<p>No insight available.</p>";
 
-  const sections = raw.split("**").filter(Boolean); // Split by bold markers
-  let html = "";
+    const sections = raw.split("**").filter(Boolean); // Split by bold markers
+    let html = "";
 
-  sections.forEach((s) => {
-  // Detect if it's a heading or regular paragraph
-  if (
-    s.toLowerCase().includes("overall store density") ||
-    s.toLowerCase().includes("cluster highlights") ||
-    s.toLowerCase().includes("store type and size breakdown") ||
-    s.toLowerCase().includes("suggestions") ||
-    s.toLowerCase().includes("demand growth projections") || // <-- new section
-    s.toLowerCase().includes("conclusion")
-  ) {
-    html += `<h3 class="text-base font-bold mb mt-8">${s.trim()}</h3>`;
-  } else {
-    const lines = s.split("\n\n").filter(Boolean);
-    lines.forEach((line) => {
-      html += `<p class="text-sm text-gray-700 mt-1">${line.replace(/^\*\s*/, "").trim()}</p>`;
+    sections.forEach((s) => {
+      // Detect if it's a heading or regular paragraph
+      if (
+        s.toLowerCase().includes("overall store density") ||
+        s.toLowerCase().includes("cluster highlights") ||
+        s.toLowerCase().includes("store type and size breakdown") ||
+        s.toLowerCase().includes("suggestions") ||
+        s.toLowerCase().includes("demand growth projections") || // <-- new section
+        s.toLowerCase().includes("conclusion")
+      ) {
+        html += `<h3 class="text-lg font-bold mb-3 mt-6 text-primary">${s.trim()}</h3>`;
+      } else {
+        const lines = s.split("\n\n").filter(Boolean);
+        lines.forEach((line) => {
+          html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line.replace(/^\*\s*/, "").trim()}</p>`;
+        });
+      }
     });
-  }
-});
 
-  return html;
-};
+    return html;
+  };
 
   return (
-    <div className="analytics-container flex flex-col md:flex-row h-screen">
-    <div className="flex flex-col w-full md:w-3/5">
-      <div className="flex justify-around md:justify-center analytics-panel p-3 md:p-6 mx-4 my-4 rounded items-center fade-in">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Enter location (e.g., Yaba, Lagos)"
-          className="analytics-input w-60 md:w-72 mr-4"
-        />
-        <button
-          onClick={() => analyzeLocation(query || "Lagos, Nigeria")}
-          className="analytics-button"
-        >
-          Analyze
-        </button>
-        <div className="analytics-status ml-4 md:flex hidden">{status}</div>
-      </div>
-
-      {/* Map container */}
-      <div className="flex w-full p-4 h-[300px] md:h-[650px]">
-        <div id="map" className="map-container h-full w-full slide-up" />
-      </div>
-    </div>
-
-    {/* Right column: AI Insight + Cluster Summaries */}
-    <div className="md:w-2/5 w-full p-6 bg-gradient-to-b from-surface-muted to-surface overflow-y-auto">
-      <h2 className="heading-xl mb-6 text-gradient fade-in">AI Insight</h2>
-      {aiInsight ? (
-        <div className="insight-panel fade-in">
-          <div className="text-body" dangerouslySetInnerHTML={{ __html: formatAiInsight(aiInsight) }} />
-        </div>
-      ) : (
-        <div className="insight-card fade-in">
-          <p className="text-caption">No AI analysis yet. Click Analyze to get started.</p>
-        </div>
-      )}
-
-      <div className="border-t border-border my-8"></div>
-      <h3 className="heading-lg mb-4 fade-in">Cluster Summaries</h3>
-      {clustersMeta.length === 0 && (
-        <div className="insight-card fade-in">
-          <p className="text-caption">Click a cluster marker to view details here.</p>
-        </div>
-      )}
-      {clustersMeta.map((c) => (
-        <div key={c.id} className="cluster-card my-4 slide-up">
-          <div className="data-label mb-2">Cluster {c.id}:</div>
-          <div className="data-metric mb-1">- {c.storeCount} Stores</div>
-          <div className="text-body mb-3">- Density score: <span className="data-metric text-accent-blue">{c.densityScore}/100</span></div>
-          <div className="progress-bar mb-4">
-            <div className="progress-fill" style={{width: `${c.densityScore}%`}}></div>
+    <div className="analytics-container flex flex-col lg:flex-row min-h-screen">
+      {/* Main Content Area - Fixed on large screens, normal on small */}
+      <div className="flex flex-col w-full lg:w-3/5 lg:fixed lg:left-0 lg:top-0 lg:h-screen">
+        {/* Controls Panel */}
+        <div className="analytics-panel m-4 md:p-6 p-3 fade-in">
+          <div className="flex justify-center flex-col sm:flex-row gap-4 items-center">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Enter location (e.g., Yaba, Lagos)"
+              className="analytics-input flex-1 max-w-md"
+            />
+            <button
+              onClick={() => analyzeLocation(query || "Lagos, Nigeria")}
+              className="analytics-button md:px-6 md:py-3 md:text-base text-sm px-3 py-2"
+            >
+              Analyze Location
+            </button>
           </div>
-          <div className="text-body">
-            <div className="data-label mb-2">- Store Types</div>
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(c.types).map(([k, v]) => (
-                <span key={k} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent-blue/10 text-accent-blue border border-accent-blue/20 hover:bg-accent-blue/20 transition-all duration-200">
-                  {k}: {v}
-                </span>
-              ))}
+          {status && (
+            <div className="analytics-status mt-4 text-center">
+              <div className="inline-flex items-center gap-2">
+                {status.includes("...") && (
+                  <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                )}
+                {status}
+              </div>
             </div>
+          )}
+        </div>
+
+        {/* Map Container - Responsive sizing */}
+        <div className="p-4 pb-6 md:w-5/6 mx-auto w-11/12">
+          <div id="map" className="h-full min-h-[300px] md:min-h-[500px] slide-up" />
+        </div>
+      </div>
+
+      {/* Spacer for small screens to prevent content overlap */}
+      <div className="lg:hidden h-4"></div>
+
+      {/* Sidebar: AI Insights & Cluster Data - Scrollable on large screens, normal on small */}
+      <div className="lg:w-2/5 w-full lg:ml-auto bg-surface lg:border-l border-border lg:custom-scrollbar lg:overflow-y-auto lg:h-screen">
+        <div className="p-6">
+          {/* AI Insights Section */}
+          <div className="mb-8">
+            <h2 className="heading-xl mb-6 fade-in">AI Market Insights</h2>
+            {aiInsight ? (
+              <div className="insight-panel fade-in">
+                <div 
+                  className="text-body prose prose-sm max-w-none" 
+                  dangerouslySetInnerHTML={{ __html: formatAiInsight(aiInsight) }} 
+                />
+              </div>
+            ) : (
+              <div className="insight-card fade-in">
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-elevated flex items-center justify-center">
+                    <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  <p className="text-caption">Enter a location and click "Analyze Location" to get AI-powered market insights.</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Cluster Analysis Section */}
+          <div>
+            <h3 className="heading-lg mb-6 fade-in">Cluster Analysis</h3>
+            {clustersMeta.length === 0 ? (
+              <div className="insight-card fade-in">
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-elevated flex items-center justify-center">
+                    <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-caption">Click on cluster markers in the map to view detailed analysis here.</p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {clustersMeta.map((c) => (
+                  <div key={c.id} className="cluster-card slide-up">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="data-label text-lg">Cluster {c.id}</div>
+                      <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-semibold">
+                        {c.storeCount} Stores
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-foreground text-sm">Density Score</span>
+                          <span className="data-metric text-lg">{c.densityScore}/100</span>
+                        </div>
+                        <div className="progress-bar">
+                          <div 
+                            className="progress-fill" 
+                            style={{width: `${c.densityScore}%`}}
+                          ></div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="data-label mb-3">Store Categories</div>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(c.types).map(([k, v]) => (
+                            <span key={k} className="store-tag">
+                              {k}: {v}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <div className="data-label mb-3">Size Distribution</div>
+                        <div className="grid grid-cols-3 gap-2">
+                          {Object.entries(c.sizes).map(([size, count]) => (
+                            <div key={size} className="text-center p-2 bg-surface rounded-lg">
+                              <div className="text-xs text-muted-foreground capitalize">{size}</div>
+                              <div className="text-lg font-bold text-foreground">{count}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      ))}
+      </div>
     </div>
-  </div>
-
   );
 }

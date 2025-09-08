@@ -2,83 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
-.leaflet-container {
-  height: 80%;
-  width: 80%;
-  margin: 0 auto;
-  touch-action: pan-x pan-y; /* ✅ enables drag on touch devices */
-}
-
 @layer base {
   :root {
-    /* Core Background & Surface Colors */
-    --background: 220 20% 98%;
-    --foreground: 220 15% 15%;
-    
-    --surface: 0 0% 100%;
-    --surface-elevated: 220 15% 99%;
-    --surface-muted: 220 10% 96%;
+    /* Modern Analytics Color Palette */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    /* Brand Colors - Data Visualization Theme */
+    --card: 240 10% 7%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 7%;
+    --popover-foreground: 0 0% 98%;
+
     --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 217 91% 55%;
-    --primary-light: 217 91% 85%;
-    
-    --secondary: 220 15% 25%;
-    --secondary-foreground: 0 0% 100%;
-    --secondary-light: 220 15% 90%;
+    --primary-foreground: 0 0% 98%;
 
-    /* Accent Colors for Data Points */
-    --accent-blue: 217 91% 60%;
-    --accent-emerald: 158 64% 52%;
-    --accent-violet: 262 83% 58%;
-    --accent-amber: 43 96% 56%;
-    --accent-rose: 351 83% 61%;
+    --secondary: 240 5% 26%;
+    --secondary-foreground: 0 0% 98%;
 
-    /* Semantic Colors */
-    --success: 158 64% 52%;
-    --success-foreground: 0 0% 100%;
-    --warning: 43 96% 56%;
-    --warning-foreground: 43 96% 15%;
-    --error: 351 83% 61%;
-    --error-foreground: 0 0% 100%;
+    --muted: 240 5% 15%;
+    --muted-foreground: 240 5% 65%;
 
-    /* UI Element Colors */
-    --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
-    --card-border: 220 20% 90%;
-    
-    --muted: 220 15% 96%;
-    --muted-foreground: 220 15% 45%;
-    
-    --border: 220 20% 88%;
-    --input: 220 20% 88%;
-    --input-focus: 217 91% 60%;
+    --accent: 142 86% 28%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 6% 20%;
+    --input: 240 6% 20%;
     --ring: 217 91% 60%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(262 83% 58%) 100%);
-    --gradient-surface: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 15% 99%) 100%);
-    --gradient-data: linear-gradient(90deg, hsl(158 64% 52%) 0%, hsl(217 91% 60%) 50%, hsl(262 83% 58%) 100%);
+    /* Analytics Design Tokens */
+    --surface: 240 10% 6%;
+    --surface-elevated: 240 10% 9%;
+    --surface-muted: 240 8% 12%;
     
-    /* Shadows & Effects */
-    --shadow-sm: 0 1px 2px 0 hsl(220 20% 20% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(220 20% 20% / 0.1), 0 2px 4px -1px hsl(220 20% 20% / 0.06);
-    --shadow-lg: 0 10px 15px -3px hsl(220 20% 20% / 0.1), 0 4px 6px -2px hsl(220 20% 20% / 0.05);
-    --shadow-xl: 0 20px 25px -5px hsl(220 20% 20% / 0.1), 0 10px 10px -5px hsl(220 20% 20% / 0.04);
-    --shadow-data: 0 8px 25px -8px hsl(217 91% 60% / 0.3);
-    --shadow-glow: 0 0 20px hsl(217 91% 60% / 0.15);
+    --accent-blue: 217 91% 60%;
+    --accent-green: 142 86% 28%;
+    --accent-purple: 262 83% 58%;
+    --accent-orange: 25 95% 53%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(262 83% 58%));
+    --gradient-surface: linear-gradient(135deg, hsl(240 10% 7%), hsl(240 10% 9%));
+    --gradient-accent: linear-gradient(90deg, hsl(217 91% 60% / 0.1), hsl(142 86% 28% / 0.1));
+    
+    --shadow-glow: 0 0 40px hsl(217 91% 60% / 0.15);
+    --shadow-elevated: 0 8px 32px hsl(240 10% 3.9% / 0.4);
+    --shadow-subtle: 0 2px 8px hsl(240 10% 3.9% / 0.2);
 
-    /* Border Radius */
     --radius: 0.75rem;
-    --radius-sm: 0.5rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.5rem;
-
-    /* Transitions */
-    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
     --sidebar-background: 0 0% 98%;
 
@@ -137,189 +110,147 @@
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
+
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground;
   }
 }
 
 @layer components {
-  /* Analytics App Specific Styles */
+  /* Analytics Dashboard Components */
   .analytics-container {
-    @apply min-h-screen bg-gradient-to-br from-background via-surface to-surface-muted;
+    @apply bg-background min-h-screen;
   }
 
   .analytics-panel {
-    @apply bg-surface/80 backdrop-blur-xl border border-card-border;
-    box-shadow: var(--shadow-lg);
+    @apply bg-card border border-border md:rounded-xl rounded shadow-[var(--shadow-elevated)] backdrop-blur-sm;
+    background: var(--gradient-surface);
   }
 
   .analytics-input {
-    @apply px-4 py-3 bg-surface/90 backdrop-blur-sm border border-input 
-           rounded-lg text-foreground placeholder:text-muted-foreground
-           focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary
-           transition-all duration-200;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .analytics-input:focus {
-    box-shadow: var(--shadow-md), 0 0 0 1px hsl(var(--primary) / 0.1);
+    @apply bg-surface-elevated border border-border rounded-lg md:px-4 md:py-3 px-3 py-2 md:text-base text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
+    box-shadow: var(--shadow-subtle);
   }
 
   .analytics-button {
-    @apply px-4 py-3 md:px-6 md:py-3 bg-gradient-to-r from-primary to-primary-hover
-           text-primary-foreground font-semibold rounded-sm md:rounded-lg
-           hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]
-           focus:outline-none focus:ring-2 focus:ring-primary/50
-           transition-all duration-200 text-sm md:text-base;
-    box-shadow: var(--shadow-data);
-  }
-
-  .analytics-button:hover {
-    box-shadow: var(--shadow-glow), var(--shadow-lg);
+    @apply bg-primary hover:bg-primary/90 text-primary-foreground md:rounded-lg rounded-md font-semibold transition-all duration-200 shadow-[var(--shadow-glow)] hover:shadow-[var(--shadow-elevated)] hover:scale-105;
+    background: var(--gradient-primary);
   }
 
   .analytics-status {
-    @apply text-sm text-muted-foreground font-medium px-3 py-1
-           bg-secondary-light/50 rounded-full border border-border;
-  }
-
-  .insight-panel {
-    @apply bg-gradient-to-b from-surface to-surface-elevated
-           border border-card-border rounded-xl p-6;
-    box-shadow: var(--shadow-xl);
-  }
-
-  .insight-card {
-    @apply bg-surface border border-card-border rounded-lg p-4
-           hover:shadow-md hover:border-primary/20
-           transition-all duration-200;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .insight-card:hover {
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
-  }
-
-  .cluster-card {
-    @apply bg-gradient-to-br from-surface via-surface-elevated to-surface
-           border border-card-border rounded-lg p-4 relative overflow-hidden
-           hover:shadow-lg hover:border-accent-blue/30
-           transition-all duration-300;
-    box-shadow: var(--shadow-md);
-  }
-
-  .cluster-card::before {
-    content: '';
-    @apply absolute inset-0 bg-gradient-to-r from-accent-blue/5 to-accent-emerald/5
-           opacity-0 transition-opacity duration-300;
-  }
-
-  .cluster-card:hover::before {
-    @apply opacity-100;
-  }
-
-  .cluster-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg), 0 0 20px hsl(var(--accent-blue) / 0.1);
+    @apply text-muted-foreground text-sm font-medium;
   }
 
   .map-container {
-    @apply relative rounded-xl overflow-hidden border border-card-border;
-    box-shadow: var(--shadow-xl);
+    @apply rounded-xl overflow-hidden border border-border shadow-[var(--shadow-elevated)];
   }
 
-  .map-container::after {
-    content: '';
-    @apply absolute inset-0 pointer-events-none;
-    box-shadow: inset 0 0 20px hsl(var(--foreground) / 0.05);
+  .insight-panel {
+    @apply bg-card border border-border rounded-xl p-6 shadow-[var(--shadow-elevated)];
+    background: var(--gradient-surface);
   }
 
-  /* Typography Enhancements */
+  .insight-card {
+    @apply bg-surface-elevated border border-border rounded-lg p-4 shadow-[var(--shadow-subtle)];
+  }
+
+  .cluster-card {
+    @apply bg-surface-elevated border border-border rounded-lg p-4 shadow-[var(--shadow-subtle)] hover:shadow-[var(--shadow-elevated)] transition-all duration-300 hover:scale-[1.02];
+  }
+
+  /* Typography */
   .heading-xl {
-    @apply text-2xl font-bold text-foreground tracking-tight;
+    @apply text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent;
   }
 
   .heading-lg {
-    @apply text-xl font-semibold text-foreground tracking-tight;
-  }
-
-  .heading-md {
-    @apply text-lg font-medium text-foreground;
+    @apply text-xl font-semibold text-foreground;
   }
 
   .text-body {
-    @apply text-sm text-foreground leading-relaxed;
+    @apply text-foreground leading-relaxed;
   }
 
   .text-caption {
-    @apply text-xs text-muted-foreground font-medium;
-  }
-
-  /* Data Visualization Elements */
-  .data-metric {
-    @apply text-lg font-bold text-foreground;
+    @apply text-muted-foreground text-sm;
   }
 
   .data-label {
-    @apply text-xs font-medium text-muted-foreground uppercase tracking-wider;
+    @apply text-primary font-semibold text-sm;
   }
 
+  .data-metric {
+    @apply text-accent font-bold;
+  }
+
+  .text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Progress Bar */
   .progress-bar {
-    @apply h-2 bg-muted rounded-full overflow-hidden;
+    @apply w-full bg-surface-elevated rounded-full h-2 overflow-hidden;
   }
 
   .progress-fill {
-    @apply h-full bg-gradient-to-r from-accent-emerald to-accent-blue
-           transition-all duration-500 ease-out;
+    @apply h-full rounded-full transition-all duration-500 ease-out;
+    background: var(--gradient-primary);
   }
 
-  /* Animation Classes */
-  .fade-in {
-    animation: fadeIn 0.3s ease-out;
+  /* Store Type Tags */
+  .store-tag {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 hover:scale-105;
+    background: var(--gradient-accent);
+    color: hsl(var(--accent-blue));
+    border: 1px solid hsl(var(--accent-blue) / 0.2);
   }
 
-  .slide-up {
-    animation: slideUp 0.4s ease-out;
-  }
-
-  .pulse-soft {
-    animation: pulseSoft 2s ease-in-out infinite;
+  .store-tag:hover {
+    background: hsl(var(--accent-blue) / 0.2);
   }
 }
 
 @layer utilities {
-  .text-gradient {
-    @apply bg-gradient-to-r from-primary via-accent-violet to-accent-emerald
-           bg-clip-text text-transparent;
+  /* Custom Animations */
+  .fade-in {
+    animation: fadeIn 0.6s ease-out forwards;
   }
 
-  .glass-effect {
-    @apply bg-surface/80 backdrop-blur-xl border border-white/10;
+  .slide-up {
+    animation: slideUp 0.5s ease-out forwards;
   }
 
-  .glow-primary {
-    box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+  .glow-effect {
+    box-shadow: var(--shadow-glow);
   }
 
-  .glow-success {
-    box-shadow: 0 0 20px hsl(var(--success) / 0.3);
+  /* Scrollbar Styling */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: hsl(var(--surface));
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary) / 0.5);
   }
 }
 
-/* Animations */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideUp {
   from {
     opacity: 0;
     transform: translateY(20px);
@@ -330,26 +261,13 @@
   }
 }
 
-@keyframes pulseSoft {
-  0%, 100% {
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
     opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-/* Responsive Design Enhancements */
-@media (max-width: 768px) {
-  .analytics-panel {
-    @apply mx-2 my-2 rounded-lg;
-  }
-  
-  .insight-panel {
-    @apply mx-2 rounded-lg;
-  }
-  
-  .cluster-card {
-    @apply mx-1;
+    transform: translateY(0);
   }
 }

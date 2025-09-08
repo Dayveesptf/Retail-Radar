@@ -74,9 +74,9 @@ app.post("/api/analyze", async (req, res) => {
     - Suggestions for market opportunities
 
     Important:
-    - Do NOT say "more demographic data is needed" or "insufficient data".
-    - Use ONLY the clusters and population info provided above.
-    - Give clear, actionable insights even if the data is limited.
+    1. Assume you are communicating with a business person
+    2. Provide concrete recommendations for retail opportunities based on store distribution to the person
+    3. Do not mention data limitations, missing information, or need for further analysis
     `;
 
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
