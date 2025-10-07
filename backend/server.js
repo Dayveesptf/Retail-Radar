@@ -97,6 +97,7 @@ app.post("/api/analyze", async (req, res) => {
     const data = await response.json();
 
     if (!response.ok) {
+      console.error("❌ Gemini API failed:", response.status, data);
       return res.status(500).json({
         error: "Gemini API request failed",
         status: response.status,
@@ -116,11 +117,13 @@ app.post("/api/analyze", async (req, res) => {
 
     res.json({ insight });
   } catch (err) {
-    console.error("AI analyze error:", err);
-    res
-      .status(500)
-      .json({ error: "AI request failed", details: err.message });
-  }
+      console.error("🔥 AI analyze error:", err);
+      res.status(500).json({
+        error: "AI request failed",
+        details: err.message,
+        stack: err.stack,
+      });
+    }
 });
 
 // --- Geocode endpoint ---
