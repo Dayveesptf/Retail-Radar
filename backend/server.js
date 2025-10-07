@@ -113,6 +113,18 @@ app.post("/api/analyze", async (req, res) => {
       } else if (candidate?.content?.text) {
         insight = candidate.content.text;
       }
+    } 
+    // New structure for Gemini 2.0+
+    else if (data?.text) {
+      insight = data.text;
+    }
+    // Alternative structure
+    else if (data?.response?.text) {
+      insight = data.response.text;
+    }
+    // Another common structure
+    else if (data?.result?.text) {
+      insight = data.result.text;
     }
 
     res.json({ insight });
