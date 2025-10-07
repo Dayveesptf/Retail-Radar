@@ -393,131 +393,43 @@ async function analyzeLocation(address) {
     console.log("Sending clusters to AI:", clustersSummary);
   }
 
-  const formatAiInsight = (raw) => {
-    if (!raw) return "<p class='text-foreground text-sm text-center py-8'>No insight available. Analyze a location to get AI-powered market insights.</p>";
+const formatAiInsight = (raw) => {
+  if (!raw) return "<p>No insight available.</p>";
 
-    let html = "";
-    const lines = raw.split('\n');
-    let currentSection = '';
+  // Clean up the text first
+  let cleaned = raw
+    // Remove all ** markers
+    .replace(/\*\*/g, '')
+    // Remove (ID: X) text
+    .replace(/\(ID:\s*\d+\)/g, '')
+    // Remove extra whitespace
+    .replace(/\n\s*\n/g, '\n\n')
+    .trim();
 
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i].trim();
+  // Split into sections and format
+  const sections = cleaned.split('\n\n');
+  let html = '';
+
+  sections.forEach(section => {
+    if (!section.trim()) return;
+
+    // Check if this is a header
+    if (section.match(/[A-Z][^:]*:$/) || 
+        section.toLowerCase().includes('overall store density') ||
+        section.toLowerCase().includes('cluster highlights') ||
+        section.toLowerCase().includes('store type and size breakdown') ||
+        section.toLowerCase().includes('market opportunity suggestions') ||
+        section.toLowerCase().includes('recommendations') ||
+        section.toLowerCase().includes('conclusion')) {
       
-      if (!line) continue;
-
-      // Remove all ** markers
-      line = line.replace(/\*\*/g, '');
-      line = line.replace(/\(ID:\s*\d+\)/g, '');
-
-      // Fix cluster numbering: ensure it starts from 1
-      line = line.replace(/Cluster\s+(\d+)/gi, (match, clusterNum) => {
-        const num = parseInt(clusterNum);
-        return `Cluster ${num}`; // This ensures proper display
-      });
-
-      // Handle main sections with beautiful styling
-      if (line.toLowerCase().includes('overall store density')) {
-        html += `<div class="mb-8">
-          <div class="flex items-center mb-4">
-            <div class="w-2 h-6 bg-primary rounded-full mr-3"></div>
-            <h3 class="text-xl font-bold text-foreground">Store Density Overview</h3>
-          </div>`;
-        currentSection = 'density';
-      }
-      else if (line.toLowerCase().includes('cluster highlights')) {
-        if (currentSection === 'density') html += `</div>`;
-        html += `<div class="mb-8">
-          <div class="flex items-center mb-6">
-            <div class="w-2 h-6 bg-accent-green rounded-full mr-3"></div>
-            <h3 class="text-xl font-bold text-foreground">Cluster Analysis</h3>
-          </div>`;
-        currentSection = 'clusters';
-      }
-      else if (line.toLowerCase().includes('store type and size breakdown')) {
-        if (currentSection === 'clusters') html += `</div>`;
-        html += `<div class="mb-8">
-          <div class="flex items-center mb-4">
-            <div class="w-2 h-6 bg-accent-orange rounded-full mr-3"></div>
-            <h3 class="text-xl font-bold text-foreground">Market Composition</h3>
-          </div>`;
-        currentSection = 'breakdown';
-      }
-      else if (line.toLowerCase().includes('recommendations') || line.toLowerCase().includes('opportunity suggestions')) {
-        if (currentSection === 'breakdown') html += `</div>`;
-        html += `<div class="mb-8">
-          <div class="flex items-center mb-6">
-            <div class="w-2 h-6 bg-accent-purple rounded-full mr-3"></div>
-            <h3 class="text-xl font-bold text-foreground">Strategic Opportunities</h3>
-          </div>
-          <div class="grid gap-4 md:grid-cols-2">`;
-        currentSection = 'recommendations';
-      }
-      // Handle cluster-specific sections with cards
-      else if (line.toLowerCase().includes('cluster') && line.match(/cluster\s+\d+/i)) {
-        const clusterMatch = line.match(/cluster\s+(\d+)/i);
-        if (clusterMatch) {
-          const clusterNum = clusterMatch[1];
-          html += `<div class="bg-surface-elevated rounded-lg border border-border p-4 mb-4">
-            <div class="flex items-center justify-between mb-3">
-              <h4 class="text-lg font-semibold text-primary">Cluster ${clusterNum}</h4>
-              <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">${line.match(/Store Count: (\d+)/)?.[1] || ''} stores</span>
-            </div>`;
-          
-          // Look ahead for characteristics and opportunity
-          let characteristics = '';
-          let opportunity = '';
-          
-          for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
-            const nextLine = lines[j].trim();
-            if (nextLine.toLowerCase().includes('characteristics:')) {
-              characteristics = nextLine.replace('Characteristics:', '').trim();
-            } else if (nextLine.toLowerCase().includes('opportunity:')) {
-              opportunity = nextLine.replace('Opportunity:', '').trim();
-              break;
-            }
-          }
-          
-          if (characteristics) {
-            html += `<div class="mb-3">
-              <p class="text-sm font-medium text-foreground mb-1">Market Profile</p>
-              <p class="text-sm text-foreground/80">${characteristics}</p>
-            </div>`;
-          }
-          
-          if (opportunity) {
-            html += `<div class="bg-accent-green/10 border border-accent-green/20 rounded-lg p-3">
-              <p class="text-sm font-medium text-accent-green mb-1">💡 Opportunity</p>
-              <p class="text-sm text-foreground">${opportunity}</p>
-            </div>`;
-          }
-          
-          html += `</div>`;
-        }
-      }
-      // Handle bullet points in recommendations section
-      else if (currentSection === 'recommendations' && line.startsWith('•')) {
-        const recommendation = line.replace('•', '').trim();
-        html += `<div class="bg-surface-elevated rounded-lg p-4 border-l-4 border-accent-purple">
-          <p class="text-sm font-medium text-foreground">${recommendation}</p>
-        </div>`;
-      }
-      // Handle regular paragraphs
-      else if (line && !line.startsWith('•') && !line.match(/^cluster\s+\d+/i)) {
-        html += `<p class="text-foreground text-sm leading-relaxed mb-4">${line}</p>`;
-      }
+      html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${section.replace(':', '')}</h3>`;
+    } else {
+      html += `<p class="text-foreground text-sm leading-relaxed mb-4">${section}</p>`;
     }
+  });
 
-    // Close the last section
-    if (currentSection) {
-      if (currentSection === 'recommendations') {
-        html += `</div></div>`;
-      } else {
-        html += `</div>`;
-      }
-    }
-
-    return html;
-  };
+  return html;
+};
 
   return (
     <div className="analytics-container flex flex-col lg:flex-row min-h-screen">
