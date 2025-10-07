@@ -79,7 +79,8 @@ app.post("/api/analyze", async (req, res) => {
     3. Do not mention data limitations, missing information, or need for further analysis
     `;
 
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+    console.log("📝 Sending prompt to Gemini...");
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
     
     const response = await fetch(apiUrl, {
       method: "POST",
@@ -88,7 +89,6 @@ app.post("/api/analyze", async (req, res) => {
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
           temperature: 0.7,
-          candidateCount: 1,
           maxOutputTokens: 1024,
         },
       }),
@@ -105,37 +105,94 @@ app.post("/api/analyze", async (req, res) => {
       });
     }
 
+    // DEBUG: Log the full response structure
+    console.log("🔍 Full Gemini Response Structure:");
+    console.log(JSON.stringify(data, null, 2));
+    
+    // Check all possible response structures
+    console.log("🔍 Checking response structure...");
+    console.log("data.candidates:", data?.candidates);
+    console.log("data.text:", data?.text);
+    console.log("data.response:", data?.response);
+    console.log("data.result:", data?.result);
+    
+    if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+      console.log("✅ Found text in: data.candidates[0].content.parts[0].text");
+    }
+    if (data?.candidates?.[0]?.content?.text) {
+      console.log("✅ Found text in: data.candidates[0].content.text");
+    }
+    if (data?.text) {
+      console.log("✅ Found text in: data.text");
+    }
+    if (data?.response?.text) {
+      console.log("✅ Found text in: data.response.text");
+    }
+    if (data?.result?.text) {
+      console.log("✅ Found text in: data.result.text");
+    }
+
     let insight = "<p>No insight returned.</p>";
+    
+    // Try all possible response structures
     if (data?.candidates?.length > 0) {
       const candidate = data.candidates[0];
       if (candidate?.content?.parts?.length > 0) {
         insight = candidate.content.parts[0].text;
+        console.log("✅ Using candidate.content.parts[0].text");
       } else if (candidate?.content?.text) {
         insight = candidate.content.text;
+        console.log("✅ Using candidate.content.text");
       }
     } 
     // New structure for Gemini 2.0+
     else if (data?.text) {
       insight = data.text;
+      console.log("✅ Using data.text");
     }
     // Alternative structure
     else if (data?.response?.text) {
       insight = data.response.text;
+      console.log("✅ Using data.response.text");
     }
     // Another common structure
     else if (data?.result?.text) {
       insight = data.result.text;
+      console.log("✅ Using data.result.text");
+    }
+    // Deep search for any text content
+    else {
+      console.log("🔍 Deep searching for text content...");
+      const searchForText = (obj, path = "") => {
+        if (typeof obj === 'string' && obj.length > 50) { // Likely the insight text
+          console.log(`✅ Found text at: ${path}`);
+          return obj;
+        }
+        if (typeof obj === 'object' && obj !== null) {
+          for (const key in obj) {
+            const result = searchForText(obj[key], path ? `${path}.${key}` : key);
+            if (result) return result;
+          }
+        }
+        return null;
+      };
+      
+      const foundText = searchForText(data);
+      if (foundText) {
+        insight = foundText;
+      }
     }
 
+    console.log("📊 Final insight:", insight);
     res.json({ insight });
   } catch (err) {
-      console.error("🔥 AI analyze error:", err);
-      res.status(500).json({
-        error: "AI request failed",
-        details: err.message,
-        stack: err.stack,
-      });
-    }
+    console.error("🔥 AI analyze error:", err);
+    res.status(500).json({
+      error: "AI request failed",
+      details: err.message,
+      stack: err.stack,
+    });
+  }
 });
 
 // --- Geocode endpoint ---
