@@ -67,14 +67,14 @@ app.post("/api/analyze", async (req, res) => {
     Population context:
     ${popInfo || "No population data available"}
 
-    Focus only on these 4 below, give analysis about them and use them as headings:
+    Focus only on these and give analysis:
     - Overall store density
     - Cluster highlights
     - Store type and size breakdown
     - Suggestions for market opportunities
 
     Important:
-    1. Assume you are communicating with a business person
+    1. Assume you are communicating with a business person, no greetings
     2. Provide concrete recommendations for retail opportunities based on store distribution to the person
     3. Do not mention data limitations, missing information, or need for further analysis
     `;
