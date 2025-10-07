@@ -61,23 +61,41 @@ app.post("/api/analyze", async (req, res) => {
     }
 
     const prompt = `You are a retail analyst AI.
-    Analyze the following clusters for ${location.address}:
-    ${JSON.stringify(minimalClusters, null, 2)}
+      Analyze the following clusters for ${location.address}:
+      ${JSON.stringify(minimalClusters, null, 2)}
 
-    Population context:
-    ${popInfo || "No population data available"}
+      Population context:
+      ${popInfo || "No population data available"}
 
-    Focus only on these and give analysis:
-    - Overall store density
-    - Cluster highlights
-    - Store type and size breakdown
-    - Suggestions for market opportunities
+      Focus only on these 4 sections and provide detailed analysis for each:
 
-    Important:
-    1. Assume you are communicating with a business person, no greetings
-    2. Provide concrete recommendations for retail opportunities based on store distribution to the person
-    3. Do not mention data limitations, missing information, or need for further analysis
-    `;
+      Overall Store Density
+      - Analyze the distribution and concentration of stores across clusters
+      - Identify high-density and low-density areas
+
+      Cluster Highlights  
+      - Analyze each cluster individually (Cluster 1, Cluster 2, etc.)
+      - Describe the main characteristics and dominant store types for each cluster
+      - Identify specific opportunities for each cluster
+
+      Store Type and Size Breakdown
+      - Analyze the distribution of different store types across all clusters
+      - Analyze the size distribution (small, medium, large stores)
+      - Identify dominant categories and gaps
+
+      Suggestions for Market Opportunities
+      - Provide concrete, specific retail business opportunities
+      - Suggest actual business types that would work well
+      - Base recommendations on the cluster analysis above
+
+      Important:
+      1. Start directly with the analysis, no greetings or introductions
+      2. Use clear section headers exactly as specified above
+      3. For Cluster Highlights, analyze EACH cluster individually with specific opportunities
+      4. Provide actionable business recommendations in Suggestions for Market Opportunities
+      5. Do not use markdown symbols like ## or *
+      6. Do not mention data limitations or need for further analysis
+      `;
 
     console.log("📝 Sending prompt to Gemini...");
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
