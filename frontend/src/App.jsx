@@ -305,7 +305,7 @@ async function analyzeLocation(address) {
       });
 
       return {
-        id: idx,
+        id: idx + 1,
         centroid,
         radiusMeters,
         storeCount: clusterStores.length,
@@ -394,55 +394,130 @@ async function analyzeLocation(address) {
   }
 
   const formatAiInsight = (raw) => {
-    if (!raw) return "<p>No insight available.</p>";
+    if (!raw) return "<p class='text-foreground text-sm text-center py-8'>No insight available. Analyze a location to get AI-powered market insights.</p>";
 
     let html = "";
     const lines = raw.split('\n');
+    let currentSection = '';
 
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i].trim();
       
       if (!line) continue;
 
-      // Remove all ** markers first
+      // Remove all ** markers
       line = line.replace(/\*\*/g, '');
+      line = line.replace(/\(ID:\s*\d+\)/g, '');
 
-      // Handle section headers
-      if (line.match(/^[A-Z][^:]*:/) || 
-          line.toLowerCase().includes('overall store density') ||
-          line.toLowerCase().includes('cluster highlights') ||
-          line.toLowerCase().includes('store type and size breakdown') ||
-          line.toLowerCase().includes('market opportunity suggestions') ||
-          line.toLowerCase().includes('recommendations') ||
-          line.toLowerCase().includes('conclusion') ||
-          line.toLowerCase().includes('specific retail opportunity suggestions')) {
-        
-        html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary border-b border-border pb-2">${line.replace(':', '')}</h3>`;
+      // Fix cluster numbering: ensure it starts from 1
+      line = line.replace(/Cluster\s+(\d+)/gi, (match, clusterNum) => {
+        const num = parseInt(clusterNum);
+        return `Cluster ${num}`; // This ensures proper display
+      });
+
+      // Handle main sections with beautiful styling
+      if (line.toLowerCase().includes('overall store density')) {
+        html += `<div class="mb-8">
+          <div class="flex items-center mb-4">
+            <div class="w-2 h-6 bg-primary rounded-full mr-3"></div>
+            <h3 class="text-xl font-bold text-foreground">Store Density Overview</h3>
+          </div>`;
+        currentSection = 'density';
       }
-      // Handle bullet points (•) - keep them as they are
-      else if (line.startsWith('•')) {
-        html += `<div class="flex items-start mb-2">
-          <span class="text-primary mr-3 mt-1">•</span>
-          <span class="text-foreground text-sm leading-relaxed flex-1">${line.substring(1).trim()}</span>
+      else if (line.toLowerCase().includes('cluster highlights')) {
+        if (currentSection === 'density') html += `</div>`;
+        html += `<div class="mb-8">
+          <div class="flex items-center mb-6">
+            <div class="w-2 h-6 bg-accent-green rounded-full mr-3"></div>
+            <h3 class="text-xl font-bold text-foreground">Cluster Analysis</h3>
+          </div>`;
+        currentSection = 'clusters';
+      }
+      else if (line.toLowerCase().includes('store type and size breakdown')) {
+        if (currentSection === 'clusters') html += `</div>`;
+        html += `<div class="mb-8">
+          <div class="flex items-center mb-4">
+            <div class="w-2 h-6 bg-accent-orange rounded-full mr-3"></div>
+            <h3 class="text-xl font-bold text-foreground">Market Composition</h3>
+          </div>`;
+        currentSection = 'breakdown';
+      }
+      else if (line.toLowerCase().includes('recommendations') || line.toLowerCase().includes('opportunity suggestions')) {
+        if (currentSection === 'breakdown') html += `</div>`;
+        html += `<div class="mb-8">
+          <div class="flex items-center mb-6">
+            <div class="w-2 h-6 bg-accent-purple rounded-full mr-3"></div>
+            <h3 class="text-xl font-bold text-foreground">Strategic Opportunities</h3>
+          </div>
+          <div class="grid gap-4 md:grid-cols-2">`;
+        currentSection = 'recommendations';
+      }
+      // Handle cluster-specific sections with cards
+      else if (line.toLowerCase().includes('cluster') && line.match(/cluster\s+\d+/i)) {
+        const clusterMatch = line.match(/cluster\s+(\d+)/i);
+        if (clusterMatch) {
+          const clusterNum = clusterMatch[1];
+          html += `<div class="bg-surface-elevated rounded-lg border border-border p-4 mb-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="text-lg font-semibold text-primary">Cluster ${clusterNum}</h4>
+              <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">${line.match(/Store Count: (\d+)/)?.[1] || ''} stores</span>
+            </div>`;
+          
+          // Look ahead for characteristics and opportunity
+          let characteristics = '';
+          let opportunity = '';
+          
+          for (let j = i + 1; j < Math.min(i + 6, lines.length); j++) {
+            const nextLine = lines[j].trim();
+            if (nextLine.toLowerCase().includes('characteristics:')) {
+              characteristics = nextLine.replace('Characteristics:', '').trim();
+            } else if (nextLine.toLowerCase().includes('opportunity:')) {
+              opportunity = nextLine.replace('Opportunity:', '').trim();
+              break;
+            }
+          }
+          
+          if (characteristics) {
+            html += `<div class="mb-3">
+              <p class="text-sm font-medium text-foreground mb-1">Market Profile</p>
+              <p class="text-sm text-foreground/80">${characteristics}</p>
+            </div>`;
+          }
+          
+          if (opportunity) {
+            html += `<div class="bg-accent-green/10 border border-accent-green/20 rounded-lg p-3">
+              <p class="text-sm font-medium text-accent-green mb-1">💡 Opportunity</p>
+              <p class="text-sm text-foreground">${opportunity}</p>
+            </div>`;
+          }
+          
+          html += `</div>`;
+        }
+      }
+      // Handle bullet points in recommendations section
+      else if (currentSection === 'recommendations' && line.startsWith('•')) {
+        const recommendation = line.replace('•', '').trim();
+        html += `<div class="bg-surface-elevated rounded-lg p-4 border-l-4 border-accent-purple">
+          <p class="text-sm font-medium text-foreground">${recommendation}</p>
         </div>`;
       }
-      // Handle numbered lists and other bullet points - keep them
-      else if (line.match(/^\d+\.\s/) || line.match(/^[*-]\s/)) {
-        const cleanLine = line.replace(/^(\d+\.\s|[*-]\s)/, '');
-        html += `<div class="flex items-start mb-2">
-          <span class="text-primary mr-3 mt-1">•</span>
-          <span class="text-foreground text-sm leading-relaxed flex-1">${cleanLine}</span>
-        </div>`;
+      // Handle regular paragraphs
+      else if (line && !line.startsWith('•') && !line.match(/^cluster\s+\d+/i)) {
+        html += `<p class="text-foreground text-sm leading-relaxed mb-4">${line}</p>`;
       }
-      // Regular paragraphs
-      else {
-        html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
+    }
+
+    // Close the last section
+    if (currentSection) {
+      if (currentSection === 'recommendations') {
+        html += `</div></div>`;
+      } else {
+        html += `</div>`;
       }
     }
 
     return html;
   };
-
 
   return (
     <div className="analytics-container flex flex-col lg:flex-row min-h-screen">
