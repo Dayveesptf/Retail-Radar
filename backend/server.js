@@ -67,7 +67,7 @@ app.post("/api/analyze", async (req, res) => {
     Population context:
     ${popInfo || "No population data available"}
 
-    Focus only on:
+    Focus only on these 4 below, give analysis about them and use them as headings:
     - Overall store density
     - Cluster highlights
     - Store type and size breakdown

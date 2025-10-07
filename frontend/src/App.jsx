@@ -410,19 +410,19 @@ async function analyzeLocation(address) {
       line = line.replace(/\(ID:\s*\d+\)/g, '');
 
       // Handle main sections
-      if (line.toLowerCase().includes('overall store density')) {
+      if (line.toLowerCase().includes('Overall store density')) {
         html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
         currentSection = 'density';
       }
-      else if (line.toLowerCase().includes('cluster highlights')) {
+      else if (line.toLowerCase().includes('Cluster highlights')) {
         html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
         currentSection = 'clusters';
       }
-      else if (line.toLowerCase().includes('store type & size breakdown') || line.toLowerCase().includes('store type and size breakdown')) {
+      else if (line.toLowerCase().includes('Store type and size breakdown') || line.toLowerCase().includes('store type and size breakdown')) {
         html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
         currentSection = 'breakdown';
       }
-      else if (line.toLowerCase().includes('recommendations')) {
+      else if (line.toLowerCase().includes('Suggestions for market opportunities')) {
         html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
         currentSection = 'recommendations';
       }
