@@ -393,43 +393,86 @@ async function analyzeLocation(address) {
     console.log("Sending clusters to AI:", clustersSummary);
   }
 
-const formatAiInsight = (raw) => {
-  if (!raw) return "<p>No insight available.</p>";
+  const formatAiInsight = (raw) => {
+    if (!raw) return "<p>No insight available.</p>";
 
-  // Clean up the text first
-  let cleaned = raw
-    // Remove all ** markers
-    .replace(/\*\*/g, '')
-    // Remove (ID: X) text
-    .replace(/\(ID:\s*\d+\)/g, '')
-    // Remove extra whitespace
-    .replace(/\n\s*\n/g, '\n\n')
-    .trim();
+    let html = "";
+    const lines = raw.split('\n');
+    let currentSection = '';
 
-  // Split into sections and format
-  const sections = cleaned.split('\n\n');
-  let html = '';
-
-  sections.forEach(section => {
-    if (!section.trim()) return;
-
-    // Check if this is a header
-    if (section.match(/[A-Z][^:]*:$/) || 
-        section.toLowerCase().includes('overall store density') ||
-        section.toLowerCase().includes('cluster highlights') ||
-        section.toLowerCase().includes('store type and size breakdown') ||
-        section.toLowerCase().includes('market opportunity suggestions') ||
-        section.toLowerCase().includes('recommendations') ||
-        section.toLowerCase().includes('conclusion')) {
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
       
-      html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${section.replace(':', '')}</h3>`;
-    } else {
-      html += `<p class="text-foreground text-sm leading-relaxed mb-4">${section}</p>`;
-    }
-  });
+      if (!line) continue;
 
-  return html;
-};
+      // Remove all ** markers and (ID: X) text
+      line = line.replace(/\*\*/g, '');
+      line = line.replace(/\(ID:\s*\d+\)/g, '');
+
+      // Handle main sections
+      if (line.toLowerCase().includes('overall store density')) {
+        html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
+        currentSection = 'density';
+      }
+      else if (line.toLowerCase().includes('cluster highlights')) {
+        html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
+        currentSection = 'clusters';
+      }
+      else if (line.toLowerCase().includes('store type & size breakdown') || line.toLowerCase().includes('store type and size breakdown')) {
+        html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
+        currentSection = 'breakdown';
+      }
+      else if (line.toLowerCase().includes('recommendations')) {
+        html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
+        currentSection = 'recommendations';
+      }
+      // Handle cluster items in Cluster Highlights section
+      else if (currentSection === 'clusters' && line.startsWith('* Cluster')) {
+        // Extract cluster number and title
+        const clusterMatch = line.match(/\* Cluster (\d+) \((.*?)\):/);
+        if (clusterMatch) {
+          const clusterNum = clusterMatch[1];
+          const clusterTitle = clusterMatch[2];
+          const description = line.replace(/\* Cluster \d+ \(.*?\):\s*/, '');
+          
+          html += `<div class="mb-4">
+            <h4 class="text-md font-semibold text-accent-green mb-2">Cluster ${clusterNum} (${clusterTitle})</h4>
+            <p class="text-foreground text-sm mb-3">${description}</p>`;
+          
+          // Look for opportunity line
+          if (i + 1 < lines.length && lines[i + 1].trim().startsWith('* Opportunity:')) {
+            const opportunityLine = lines[i + 1].trim().replace('* Opportunity:', '').trim();
+            html += `<div class="bg-accent-green/10 border border-accent-green/20 rounded-lg p-3">
+              <p class="text-sm font-medium text-accent-green mb-1">💡 Opportunity</p>
+              <p class="text-sm text-foreground">${opportunityLine}</p>
+            </div>`;
+            i++; // Skip the next line since we processed it
+          }
+          
+          html += `</div>`;
+        }
+      }
+      // Handle bullet points in breakdown section
+      else if (currentSection === 'breakdown' && line.startsWith('*')) {
+        const cleanLine = line.replace(/^\*\s*/, '');
+        html += `<p class="text-foreground text-sm leading-relaxed mb-3 pl-4">• ${cleanLine}</p>`;
+      }
+      // Handle numbered recommendations
+      else if (currentSection === 'recommendations' && line.match(/^\d+\./)) {
+        const cleanLine = line.replace(/^\d+\.\s*/, '');
+        html += `<div class="flex items-start mb-3">
+          <span class="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">${line.match(/^\d+/)[0]}</span>
+          <span class="text-foreground text-sm leading-relaxed flex-1">${cleanLine}</span>
+        </div>`;
+      }
+      // Handle regular paragraphs
+      else if (line && !line.startsWith('*') && !line.match(/^\d+\./)) {
+        html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
+      }
+    }
+
+    return html;
+  };
 
   return (
     <div className="analytics-container flex flex-col lg:flex-row min-h-screen">
