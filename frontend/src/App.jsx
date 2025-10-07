@@ -135,7 +135,7 @@ async function analyzeLocation(address) {
   // ---------------- Overpass query ----------------
   setStatus("Fetching stores from Overpass...");
   
-  const radius = 5000;
+  const radius = 3000;
   
   // EXPANDED Overpass query to include more shop types and amenities
   const overpassQL = `
@@ -394,111 +394,48 @@ async function analyzeLocation(address) {
   }
 
   const formatAiInsight = (raw) => {
-    if (!raw) return "<p>No insight available.</p>";
+  if (!raw) return "<p>No insight available.</p>";
 
-    let html = "";
-    const lines = raw.split('\n');
-    let inNumberedList = false;
-    let inBulletList = false;
+  let html = "";
+  const lines = raw.split('\n');
 
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i].trim();
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    
+    if (!line) continue;
+
+    // Handle section headers
+    if (line.match(/^[A-Z][^:]*:/) || 
+        line.toLowerCase().includes('overall store density') ||
+        line.toLowerCase().includes('cluster highlights') ||
+        line.toLowerCase().includes('store type and size breakdown') ||
+        line.toLowerCase().includes('market opportunity suggestions') ||
+        line.toLowerCase().includes('recommendations') ||
+        line.toLowerCase().includes('conclusion')) {
       
-      if (!line) {
-        // Close any open lists when we hit an empty line
-        if (inNumberedList) {
-          html += '</ol>';
-          inNumberedList = false;
-        }
-        if (inBulletList) {
-          html += '</ul>';
-          inBulletList = false;
-        }
-        continue;
-      }
-
-      // Handle section headers
-      if (line.match(/^[A-Z][^:]*:/) || 
-          line.toLowerCase().includes('overall store density') ||
-          line.toLowerCase().includes('cluster highlights') ||
-          line.toLowerCase().includes('store type and size breakdown') ||
-          line.toLowerCase().includes('market opportunity suggestions') ||
-          line.toLowerCase().includes('recommendations') ||
-          line.toLowerCase().includes('conclusion')) {
-        
-        // Close any open lists before starting a new section
-        if (inNumberedList) {
-          html += '</ol>';
-          inNumberedList = false;
-        }
-        if (inBulletList) {
-          html += '</ul>';
-          inBulletList = false;
-        }
-        
-        html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line.replace(':', '')}</h3>`;
-      }
-      // Handle numbered lists (1., 2., 3., etc.)
-      else if (line.match(/^\d+\.\s/)) {
-        if (!inNumberedList) {
-          html += '<ol class="list-decimal list-inside mb-4 space-y-2">';
-          inNumberedList = true;
-        }
-        const listItem = line.replace(/^\d+\.\s*/, '');
-        html += `<li class="text-foreground text-sm leading-relaxed">${listItem}</li>`;
-      }
-      // Handle bullet points (* or -)
-      else if (line.match(/^[*\\-]\s/)) {
-        if (!inBulletList) {
-          html += '<ul class="list-disc list-inside mb-4 space-y-2">';
-          inBulletList = true;
-        }
-        const listItem = line.replace(/^[*\\-]\s*/, '');
-        html += `<li class="text-foreground text-sm leading-relaxed">${listItem}</li>`;
-      }
-      // Handle bold text within paragraphs
-      else if (line.includes('**')) {
-        line = line.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
-        
-        // Close any open lists before starting a paragraph
-        if (inNumberedList) {
-          html += '</ol>';
-          inNumberedList = false;
-        }
-        if (inBulletList) {
-          html += '</ul>';
-          inBulletList = false;
-        }
-        
-        html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
-      }
-      // Regular paragraphs
-      else {
-        // Close any open lists before starting a paragraph
-        if (inNumberedList) {
-          html += '</ol>';
-          inNumberedList = false;
-        }
-        if (inBulletList) {
-          html += '</ul>';
-          inBulletList = false;
-        }
-        
-        html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
-      }
+      html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary border-b border-border pb-2">${line.replace(':', '')}</h3>`;
     }
-
-    // Close any lists that are still open at the end
-    if (inNumberedList) {
-      html += '</ol>';
+    // Handle numbered lists and bullet points - convert to clean paragraphs
+    else if (line.match(/^\d+\.\s/) || line.match(/^[*-]\s/)) {
+      const cleanLine = line.replace(/^(\d+\.\s|[*-]\s)/, '');
+      html += `<div class="flex items-start mb-2">
+        <span class="text-primary mr-3 mt-1">•</span>
+        <span class="text-foreground text-sm leading-relaxed flex-1">${cleanLine}</span>
+      </div>`;
     }
-    if (inBulletList) {
-      html += '</ul>';
+    // Handle bold text
+    else if (line.includes('**')) {
+      line = line.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
+      html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
     }
+    // Regular paragraphs
+    else {
+      html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
+    }
+  }
 
-    return html;
-  };
-
+  return html;
+};
   return (
     <div className="analytics-container flex flex-col lg:flex-row min-h-screen">
       {/* Main Content Area - Fixed on large screens, normal on small */}
