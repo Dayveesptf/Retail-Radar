@@ -71,131 +71,182 @@ export default function StoreDensityMap() {
     };
   }, []);
 
-  async function analyzeLocation(address) {
-    setStatus("Geocoding address...");
-    setAiInsight(null);
-    setClustersMeta([]);
+async function analyzeLocation(address) {
+  setStatus("Geocoding address...");
+  setAiInsight(null);
+  setClustersMeta([]);
 
-    // ---------------- Geocoding ----------------
-    async function geocodeAddress(address) {
-      try {
-        const nomRes = await fetch(
-          `${API_BASE}/api/geocode?q=${encodeURIComponent(
-            address
-          )}&countrycodes=ng`
-        );
-
-        if (nomRes.ok) {
-          const nomJson = await nomRes.json();
-          if (nomJson && nomJson.length > 0) {
-            const match =
-              nomJson.find((r) => r.display_name.includes("Lagos")) ||
-              nomJson.find((r) => r.display_name.includes("Nigeria")) ||
-              nomJson[0];
-            return { lat: match.lat, lon: match.lon };
-          }
-        }
-      } catch (e) {
-        console.warn("Nominatim failed:", e);
-      }
-
-      // fallback: Photon
-      try {
-        const photonRes = await fetch(
-          `https://photon.komoot.io/api/?q=${encodeURIComponent(
-            address
-          )}&limit=5`
-        );
-        if (photonRes.ok) {
-          const photonJson = await photonRes.json();
-          if (photonJson && photonJson.features.length > 0) {
-            const first = photonJson.features[0];
-            return {
-              lat: first.geometry.coordinates[1],
-              lon: first.geometry.coordinates[0],
-            };
-          }
-        }
-      } catch (e) {
-        console.warn("Photon failed:", e);
-      }
-
-      return null;
-    }
-
-    const geo = await geocodeAddress(address);
-
-    if (!geo) {
-      setStatus("Location not found.");
-      return;
-    }
-    const center = [parseFloat(geo.lat), parseFloat(geo.lon)];
-    mapRef.current.setView(center, 13);
-
-    // ---------------- Overpass query ----------------
-    setStatus("Fetching stores from Overpass...");
-    const radius = 5000;
-    const overpassQL = `
-      [out:json][timeout:25];
-      (
-        node["shop"](around:${radius},${center[0]},${center[1]});
-        node["amenity"="marketplace"](around:${radius},${center[0]},${center[1]});
+  // ---------------- Geocoding ----------------
+  async function geocodeAddress(address) {
+    try {
+      const nomRes = await fetch(
+        `${API_BASE}/api/geocode?q=${encodeURIComponent(
+          address
+        )}&countrycodes=ng`
       );
-      out center tags;
-    `;
-    const overpassRes = await fetch(
-      "https://overpass-api.de/api/interpreter",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: `data=${encodeURIComponent(overpassQL)}`,
+
+      if (nomRes.ok) {
+        const nomJson = await nomRes.json();
+        if (nomJson && nomJson.length > 0) {
+          const match =
+            nomJson.find((r) => r.display_name.includes("Lagos")) ||
+            nomJson.find((r) => r.display_name.includes("Nigeria")) ||
+            nomJson[0];
+          return { lat: match.lat, lon: match.lon };
+        }
       }
-    );
-    const overpassJson = await overpassRes.json();
-    const elements = overpassJson.elements || [];
-    if (elements.length === 0) {
-      setStatus("No stores found in that area.");
-      return;
+    } catch (e) {
+      console.warn("Nominatim failed:", e);
     }
 
-    setStatus(`Found ${elements.length} places. Clustering...`);
-
-    // ---------------- Store processing ----------------
-    const fetchedStores = elements.map((el) => {
-      const name =
-        (el.tags && (el.tags.name || el.tags["brand"])) || "Unnamed";
-      const type =
-        (el.tags && (el.tags.shop || el.tags.amenity)) || "shop";
-      let size = "small";
-      const bigKeywords = ["supermarket", "department_store", "mall"];
-      const medKeywords = ["grocery", "chemist", "bakery", "convenience"];
-      if (el.tags) {
-        const allTags = Object.values(el.tags).join(" ").toLowerCase();
-        if (bigKeywords.some((k) => allTags.includes(k))) size = "large";
-        else if (medKeywords.some((k) => allTags.includes(k))) size = "medium";
+    // fallback: Photon
+    try {
+      const photonRes = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(
+          address
+        )}&limit=5`
+      );
+      if (photonRes.ok) {
+        const photonJson = await photonRes.json();
+        if (photonJson && photonJson.features.length > 0) {
+          const first = photonJson.features[0];
+          return {
+            lat: first.geometry.coordinates[1],
+            lon: first.geometry.coordinates[0],
+          };
+        }
       }
-      return {
-        id: el.id,
-        name,
-        lat: el.lat,
-        lng: el.lon,
-        type,
-        size,
-        raw: el.tags || {},
-      };
-    });
+    } catch (e) {
+      console.warn("Photon failed:", e);
+    }
 
-    // ---------------- Clustering ----------------
-    const points = fetchedStores.map((s) => [s.lat, s.lng]);
-    const dbscan = new clustering.DBSCAN();
-    const eps = 500;
-    const minPts = 3;
-    const clusters = dbscan.run(points, eps, minPts, haversine);
-    const noise = dbscan.noise || [];
+    return null;
+  }
 
-    setStatus(
-      `Found ${clusters.length} clusters (and ${noise.length} noise points). Rendering...`
+  const geo = await geocodeAddress(address);
+
+  if (!geo) {
+    setStatus("Location not found.");
+    return;
+  }
+  const center = [parseFloat(geo.lat), parseFloat(geo.lon)];
+  mapRef.current.setView(center, 13);
+
+  // ---------------- Overpass query ----------------
+  setStatus("Fetching stores from Overpass...");
+  
+  // INCREASE RADIUS FROM 5000m to 8000m (8km)
+  const radius = 8000;
+  
+  // EXPANDED Overpass query to include more shop types and amenities
+  const overpassQL = `
+    [out:json][timeout:30];
+    (
+      // All shop types
+      node["shop"](around:${radius},${center[0]},${center[1]});
+      way["shop"](around:${radius},${center[0]},${center[1]});
+      relation["shop"](around:${radius},${center[0]},${center[1]});
+      
+      // Marketplaces and commercial areas
+      node["amenity"="marketplace"](around:${radius},${center[0]},${center[1]});
+      way["amenity"="marketplace"](around:${radius},${center[0]},${center[1]});
+      node["landuse"="commercial"](around:${radius},${center[0]},${center[1]});
+      way["landuse"="commercial"](around:${radius},${center[0]},${center[1]});
+      
+      // Retail-related amenities
+      node["amenity"~"restaurant|cafe|fast_food|bank|pharmacy"](around:${radius},${center[0]},${center[1]});
+      way["amenity"~"restaurant|cafe|fast_food|bank|pharmacy"](around:${radius},${center[0]},${center[1]});
+      
+      // Shopping centers and malls
+      node["building"="retail"](around:${radius},${center[0]},${center[1]});
+      way["building"="retail"](around:${radius},${center[0]},${center[1]});
+      node["building"="commercial"](around:${radius},${center[0]},${center[1]});
+      way["building"="commercial"](around:${radius},${center[0]},${center[1]});
     );
+    out center tags;
+  `;
+  
+  const overpassRes = await fetch(
+    "https://overpass-api.de/api/interpreter",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `data=${encodeURIComponent(overpassQL)}`,
+    }
+  );
+  const overpassJson = await overpassRes.json();
+  const elements = overpassJson.elements || [];
+  
+  if (elements.length === 0) {
+    setStatus("No stores found in that area.");
+    return;
+  }
+
+  setStatus(`Found ${elements.length} places. Processing...`);
+
+  // ---------------- Store processing ----------------
+  const fetchedStores = elements.map((el) => {
+    // Handle different element types (node, way, relation)
+    const lat = el.lat || el.center?.lat;
+    const lng = el.lon || el.center?.lon;
+    
+    const name =
+      (el.tags && (el.tags.name || el.tags["brand"] || el.tags["operator"])) || "Unnamed";
+    
+    // Determine type - prefer shop tag, then amenity, then building
+    let type = "unknown";
+    if (el.tags?.shop) {
+      type = el.tags.shop;
+    } else if (el.tags?.amenity) {
+      type = el.tags.amenity;
+    } else if (el.tags?.building) {
+      type = el.tags.building;
+    } else if (el.tags?.landuse) {
+      type = el.tags.landuse;
+    }
+
+    // Enhanced size classification
+    let size = "small";
+    const bigKeywords = ["supermarket", "department_store", "mall", "hypermarket", "shopping_centre"];
+    const medKeywords = ["grocery", "chemist", "bakery", "convenience", "hardware", "furniture", "electronics"];
+    
+    if (el.tags) {
+      const allTags = Object.values(el.tags).join(" ").toLowerCase();
+      if (bigKeywords.some((k) => allTags.includes(k))) size = "large";
+      else if (medKeywords.some((k) => allTags.includes(k))) size = "medium";
+      
+      // Also consider area for ways/relations
+      if (el.type === 'way' || el.type === 'relation') {
+        size = "medium"; // Assume ways/relations are larger than nodes
+      }
+    }
+
+    return {
+      id: el.id,
+      name,
+      lat,
+      lng,
+      type,
+      size,
+      elementType: el.type,
+      raw: el.tags || {},
+    };
+  }).filter(store => store.lat && store.lng); // Filter out items without coordinates
+
+  // ---------------- Clustering ----------------
+  const points = fetchedStores.map((s) => [s.lat, s.lng]);
+  const dbscan = new clustering.DBSCAN();
+  
+  // Adjust clustering parameters for wider area
+  const eps = 600; // Increased from 500 to account for wider distribution
+  const minPts = 3; // Keep same minimum points per cluster
+  
+  const clusters = dbscan.run(points, eps, minPts, haversine);
+  const noise = dbscan.noise || [];
+
+  setStatus(
+    `Found ${clusters.length} clusters (and ${noise.length} individual stores). Rendering...`
+  );
 
     // clear old layers
     mapRef.current.eachLayer((layer) => {
