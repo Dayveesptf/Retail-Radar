@@ -394,48 +394,56 @@ async function analyzeLocation(address) {
   }
 
   const formatAiInsight = (raw) => {
-  if (!raw) return "<p>No insight available.</p>";
+    if (!raw) return "<p>No insight available.</p>";
 
-  let html = "";
-  const lines = raw.split('\n');
+    let html = "";
+    const lines = raw.split('\n');
 
-  for (let i = 0; i < lines.length; i++) {
-    let line = lines[i].trim();
-    
-    if (!line) continue;
-
-    // Handle section headers
-    if (line.match(/^[A-Z][^:]*:/) || 
-        line.toLowerCase().includes('overall store density') ||
-        line.toLowerCase().includes('cluster highlights') ||
-        line.toLowerCase().includes('store type and size breakdown') ||
-        line.toLowerCase().includes('market opportunity suggestions') ||
-        line.toLowerCase().includes('recommendations') ||
-        line.toLowerCase().includes('conclusion')) {
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
       
-      html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary border-b border-border pb-2">${line.replace(':', '')}</h3>`;
-    }
-    // Handle numbered lists and bullet points - convert to clean paragraphs
-    else if (line.match(/^\d+\.\s/) || line.match(/^[*-]\s/)) {
-      const cleanLine = line.replace(/^(\d+\.\s|[*-]\s)/, '');
-      html += `<div class="flex items-start mb-2">
-        <span class="text-primary mr-3 mt-1">•</span>
-        <span class="text-foreground text-sm leading-relaxed flex-1">${cleanLine}</span>
-      </div>`;
-    }
-    // Handle bold text
-    else if (line.includes('**')) {
-      line = line.replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold text-foreground">$1</strong>');
-      html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
-    }
-    // Regular paragraphs
-    else {
-      html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
-    }
-  }
+      if (!line) continue;
 
-  return html;
-};
+      // Remove all ** markers first
+      line = line.replace(/\*\*/g, '');
+
+      // Handle section headers
+      if (line.match(/^[A-Z][^:]*:/) || 
+          line.toLowerCase().includes('overall store density') ||
+          line.toLowerCase().includes('cluster highlights') ||
+          line.toLowerCase().includes('store type and size breakdown') ||
+          line.toLowerCase().includes('market opportunity suggestions') ||
+          line.toLowerCase().includes('recommendations') ||
+          line.toLowerCase().includes('conclusion') ||
+          line.toLowerCase().includes('specific retail opportunity suggestions')) {
+        
+        html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary border-b border-border pb-2">${line.replace(':', '')}</h3>`;
+      }
+      // Handle bullet points (•) - keep them as they are
+      else if (line.startsWith('•')) {
+        html += `<div class="flex items-start mb-2">
+          <span class="text-primary mr-3 mt-1">•</span>
+          <span class="text-foreground text-sm leading-relaxed flex-1">${line.substring(1).trim()}</span>
+        </div>`;
+      }
+      // Handle numbered lists and other bullet points - keep them
+      else if (line.match(/^\d+\.\s/) || line.match(/^[*-]\s/)) {
+        const cleanLine = line.replace(/^(\d+\.\s|[*-]\s)/, '');
+        html += `<div class="flex items-start mb-2">
+          <span class="text-primary mr-3 mt-1">•</span>
+          <span class="text-foreground text-sm leading-relaxed flex-1">${cleanLine}</span>
+        </div>`;
+      }
+      // Regular paragraphs
+      else {
+        html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
+      }
+    }
+
+    return html;
+  };
+
+
   return (
     <div className="analytics-container flex flex-col lg:flex-row min-h-screen">
       {/* Main Content Area - Fixed on large screens, normal on small */}
