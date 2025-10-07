@@ -431,9 +431,9 @@ async function analyzeLocation(address) {
     else if (currentSection === 'clusters' && line.toLowerCase().includes('cluster')) {
       // Color cluster headings in blue
       if (line.match(/cluster\s+\d+/i)) {
-        html += `<h4 class="text-md font-semibold text-blue-600 mb-2 mt-4">${line}</h4>`;
+        html += `<h4 class="text-md font-semibold text-[#00779b] mb-2 mt-4">${line}</h4>`;
       } else {
-        html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
+        html += `<p class="text-foreground text-sm text-gray-400 leading-relaxed mb-3">${line}</p>`;
       }
     }
     // Handle bullet points in breakdown section
@@ -445,8 +445,8 @@ async function analyzeLocation(address) {
     else if (currentSection === 'opportunities' && line.match(/^\d+\./)) {
       const cleanLine = line.replace(/^\d+\.\s*/, '');
       html += `<div class="flex items-start mb-3">
-        <span class="bg-primary text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">${line.match(/^\d+/)[0]}</span>
-        <span class="text-foreground text-sm leading-relaxed flex-1">${cleanLine}</span>
+        <span class="bg-[#00779b] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">${line.match(/^\d+/)[0]}</span>
+        <span class="text-foreground text-gray-400 text-sm leading-relaxed flex-1">${cleanLine}</span>
       </div>`;
     }
     // Handle regular paragraphs
