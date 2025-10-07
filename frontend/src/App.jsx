@@ -431,7 +431,7 @@ async function analyzeLocation(address) {
     else if (currentSection === 'clusters' && line.toLowerCase().includes('cluster')) {
       // Color cluster headings in blue
       if (line.match(/cluster\s+\d+/i)) {
-        html += `<h4 class="text-md font-semibold text-[#00779b] mb-2 mt-4">${line}</h4>`;
+        html += `<h4 class="text-sm font-semibold text-gray-400 mb-2 mt-4">${line}</h4>`;
       } else {
         html += `<p class="text-sm text-gray-400 leading-relaxed mb-3">${line}</p>`;
       }

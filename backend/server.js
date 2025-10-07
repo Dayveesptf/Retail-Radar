@@ -76,7 +76,6 @@ app.post("/api/analyze", async (req, res) => {
       Cluster Highlights  
       - Analyze each cluster individually (Cluster 1, Cluster 2, etc.)
       - Describe the main characteristics and dominant store types for each cluster
-      - Identify specific opportunities for each cluster
 
       Store Type and Size Breakdown
       - Analyze the distribution of different store types across all clusters
