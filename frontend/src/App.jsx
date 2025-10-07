@@ -345,32 +345,98 @@ export default function StoreDensityMap() {
   }
 
   const formatAiInsight = (raw) => {
-    if (!raw) return "<p>No insight available.</p>";
+  if (!raw) return "<p>No insight available.</p>";
 
-    const sections = raw.split("**").filter(Boolean); // Split by bold markers
-    let html = "";
+  let html = "";
+  
+  // Split by lines and process each one
+  const lines = raw.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    if (!line) continue; // Skip empty lines
 
-    sections.forEach((s) => {
-      // Detect if it's a heading or regular paragraph
-      if (
-        s.toLowerCase().includes("overall store density") ||
-        s.toLowerCase().includes("cluster highlights") ||
-        s.toLowerCase().includes("store type and size breakdown") ||
-        s.toLowerCase().includes("suggestions") ||
-        s.toLowerCase().includes("demand growth projections") || // <-- new section
-        s.toLowerCase().includes("conclusion")
-      ) {
-        html += `<h3 class="text-lg font-bold mb-3 mt-6 text-primary">${s.trim()}</h3>`;
-      } else {
-        const lines = s.split("\n\n").filter(Boolean);
-        lines.forEach((line) => {
-          html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line.replace(/^\*\s*/, "").trim()}</p>`;
-        });
+    // Handle headings (lines that end with colons and are likely section headers)
+    if (line.match(/^[A-Za-z][^:]*:$/) || 
+        line.toLowerCase().includes('overall store density') ||
+        line.toLowerCase().includes('cluster highlights') ||
+        line.toLowerCase().includes('store type and size breakdown') ||
+        line.toLowerCase().includes('suggestions') ||
+        line.toLowerCase().includes('recommendations') ||
+        line.toLowerCase().includes('conclusion')) {
+      
+      html += `<h3 class="text-lg font-bold mb-3 mt-6 text-primary">${line.replace(':', '')}</h3>`;
+    }
+    // Handle table rows (lines with pipes)
+    else if (line.includes('|') && line.split('|').length > 2) {
+      // Check if this is the start of a table
+      if (line.replace(/\|/g, '').replace(/-/g, '').trim() === '') {
+        // This is a table separator line, skip it
+        continue;
       }
-    });
+      
+      const cells = line.split('|').filter(cell => cell.trim() !== '');
+      
+      if (i === 0 || !lines[i-1].includes('|')) {
+        // Start of table
+        html += `<div class="overflow-x-auto my-4"><table class="min-w-full border border-border">`;
+        html += `<thead><tr class="bg-surface-elevated">`;
+        cells.forEach(cell => {
+          html += `<th class="border border-border px-3 py-2 text-left text-sm font-semibold text-foreground">${cell.trim()}</th>`;
+        });
+        html += `</tr></thead><tbody>`;
+      } else {
+        // Table row
+        html += `<tr class="hover:bg-surface-elevated/50">`;
+        cells.forEach(cell => {
+          html += `<td class="border border-border px-3 py-2 text-sm text-foreground">${cell.trim()}</td>`;
+        });
+        html += `</tr>`;
+      }
+      
+      // Check if this is the end of the table
+      if (i === lines.length - 1 || !lines[i+1].includes('|')) {
+        html += `</tbody></table></div>`;
+      }
+    }
+    // Handle bullet points
+    else if (line.startsWith('* ') || line.startsWith('- ')) {
+      if (i === 0 || (!lines[i-1].startsWith('* ') && !lines[i-1].startsWith('- '))) {
+        html += `<ul class="list-disc list-inside mb-3 space-y-1">`;
+      }
+      html += `<li class="text-foreground text-sm">${line.substring(2).trim()}</li>`;
+      
+      if (i === lines.length - 1 || (!lines[i+1].startsWith('* ') && !lines[i+1].startsWith('- '))) {
+        html += `</ul>`;
+      }
+    }
+    // Handle numbered lists
+    else if (line.match(/^\d+\./)) {
+      if (i === 0 || !lines[i-1].match(/^\d+\./)) {
+        html += `<ol class="list-decimal list-inside mb-3 space-y-1">`;
+      }
+      html += `<li class="text-foreground text-sm">${line.replace(/^\d+\.\s*/, '').trim()}</li>`;
+      
+      if (i === lines.length - 1 || !lines[i+1].match(/^\d+\./)) {
+        html += `</ol>`;
+      }
+    }
+    // Regular paragraphs
+    else {
+      // Check if this line is part of a continuing paragraph
+      if (i > 0 && lines[i-1].trim() && !lines[i-1].match(/[:|*\\-]\s*$/) && 
+          !lines[i-1].endsWith('</h3>') && !lines[i-1].endsWith('</li>')) {
+        // Continue the previous paragraph
+        html = html.replace(/(<p[^>]*>)(.*)$/, `$1$2 ${line}`);
+      } else {
+        html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
+      }
+    }
+  }
 
-    return html;
-  };
+  return html;
+};
 
   return (
     <div className="analytics-container flex flex-col lg:flex-row min-h-screen">
