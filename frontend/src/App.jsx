@@ -412,50 +412,50 @@ async function analyzeLocation(address) {
 
     // Handle main sections
     if (line.toLowerCase().includes('overall store density')) {
-      html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
+      html += `<h3 class="md:text-lg text-base font-bold mb-4 mt-6 text-primary">${line}</h3>`;
       currentSection = 'density';
     }
     else if (line.toLowerCase().includes('cluster highlights')) {
-      html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
+      html += `<h3 class="md:text-lg text-base font-bold mb-4 mt-6 text-primary">${line}</h3>`;
       currentSection = 'clusters';
     }
     else if (line.toLowerCase().includes('store type and size breakdown')) {
-      html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
+      html += `<h3 class="md:text-lg text-base font-bold mb-4 mt-6 text-primary">${line}</h3>`;
       currentSection = 'breakdown';
     }
     else if (line.toLowerCase().includes('suggestions for market opportunities')) {
-      html += `<h3 class="text-lg font-bold mb-4 mt-6 text-primary">${line}</h3>`;
+      html += `<h3 class="md:text-lg text-base font-bold mb-4 mt-6 text-primary">${line}</h3>`;
       currentSection = 'opportunities';
     }
     // Handle cluster analysis in Cluster Highlights section
     else if (currentSection === 'clusters' && line.toLowerCase().includes('cluster')) {
       // Color cluster headings in blue
       if (line.match(/cluster\s+\d+/i)) {
-        html += `<h4 class="text-sm font-semibold text-gray-400 mb-2 mt-4">${line}</h4>`;
+        html += `<h4 class="md:text-sm text-xs font-semibold text-gray-400 mb-2 mt-6">${line}</h4>`;
       } else {
-        html += `<p class="text-sm text-gray-400 leading-relaxed mb-3">${line}</p>`;
+        html += `<p class="md:text-sm text-xs text-gray-400 leading-relaxed mb-3">${line}</p>`;
       }
     }
     // Handle bullet points in breakdown section
     else if (currentSection === 'breakdown' && (line.startsWith('•') || line.startsWith('-'))) {
       const cleanLine = line.replace(/^[•-]\s*/, '');
-      html += `<p class="text-foreground text-sm leading-relaxed mb-3 pl-4">• ${cleanLine}</p>`;
+      html += `<p class="text-foreground md:text-sm text-xs leading-relaxed mb-3 pl-4">• ${cleanLine}</p>`;
     }
     // Handle numbered recommendations in opportunities section
     else if (currentSection === 'opportunities' && line.match(/^\d+\./)) {
       const cleanLine = line.replace(/^\d+\.\s*/, '');
       html += `<div class="flex items-start mb-3">
         <span class="bg-[#00779b] text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-medium mr-3 mt-1 flex-shrink-0">${line.match(/^\d+/)[0]}</span>
-        <span class="text-foreground text-gray-400 text-sm leading-relaxed flex-1">${cleanLine}</span>
+        <span class="text-foreground text-gray-400 md:text-sm text-xs leading-relaxed flex-1">${cleanLine}</span>
       </div>`;
     }
     // Handle regular paragraphs
     else if (line && currentSection && !line.match(/^\d+\./)) {
-      html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
+      html += `<p class="text-foreground md:text-sm text-xs leading-relaxed mb-3">${line}</p>`;
     }
     // Handle any remaining text that doesn't fit other categories
     else if (line && !currentSection) {
-      html += `<p class="text-foreground text-sm leading-relaxed mb-3">${line}</p>`;
+      html += `<p class="text-foreground md:text-sm text-xs leading-relaxed mb-3">${line}</p>`;
     }
   }
 
